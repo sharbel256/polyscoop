@@ -1,0 +1,27 @@
+[project]
+name = "polyscoop-backend"
+version = "0.1.0"
+description = "polyscoop – Polymarket data dashboard backend"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]",
+    "uvicorn[standard]",
+    "pydantic-settings",
+    "httpx",
+    "python-jose[cryptography]",
+    "passlib[bcrypt]",
+    "py-clob-client",
+    "python-dotenv",
+    "ruff",
+    "pytest",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

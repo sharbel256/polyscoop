@@ -1,0 +1,95 @@
+# polyscoop – development task runner
+# Usage: just <recipe>
+
+set dotenv-load := true
+
+# ── Setup ────────────────────────────────────────────────
+
+# First-time local development setup
+setup:
+    @echo "🔧 Setting up polyscoop local development..."
+    just setup-backend
+    just setup-frontend
+    @echo ""
+    @echo "✅ Setup complete! Copy .env.example → .env and fill in values, then run: just dev"
+
+# Set up the backend (Python / FastAPI)
+setup-backend:
+    @echo "── Backend ──"
+    cd backend && uv sync
+    @echo "✅ Backend dependencies installed"
+
+# Set up the frontend (React / Vite)
+setup-frontend:
+    @echo "── Frontend ──"
+    cd frontend && bun install
+    @echo "✅ Frontend dependencies installed"
+
+# ── Development ──────────────────────────────────────────
+
+# Run both backend and frontend in parallel
+dev:
+    just dev-backend &
+    just dev-frontend &
+    wait
+
+# Run backend dev server
+dev-backend:
+    cd backend && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Run frontend dev server
+dev-frontend:
+    cd frontend && bun run dev
+
+# ── Build ────────────────────────────────────────────────
+
+# Build frontend for production (output to frontend/dist)
+build-frontend:
+    cd frontend && bun run build
+    @echo "✅ Frontend built to frontend/dist"
+
+# Build frontend and serve everything from the backend
+build-and-serve:
+    just build-frontend
+    just dev-backend
+
+# ── Quality ──────────────────────────────────────────────
+
+# Lint & format backend
+lint-backend:
+    cd backend && uv run ruff check . --fix && uv run ruff format .
+
+# Lint frontend
+lint-frontend:
+    cd frontend && bun run lint
+
+# Type-check frontend
+typecheck-frontend:
+    cd frontend && bun run typecheck
+
+# Run all checks
+lint: lint-backend lint-frontend
+
+# ── Testing ──────────────────────────────────────────────
+
+# Run backend tests
+test-backend:
+    cd backend && uv run pytest
+
+# Run frontend tests
+test-frontend:
+    cd frontend && bun run test
+
+test: test-backend test-frontend
+
+# ── Utilities ────────────────────────────────────────────
+
+# Generate a random secret key
+secret:
+    python3 -c "import secrets; print(secrets.token_urlsafe(32))"
+
+# Clean build artifacts
+clean:
+    rm -rf backend/__pycache__ backend/.pytest_cache backend/logs
+    rm -rf frontend/node_modules frontend/dist
+    @echo "🧹 Cleaned"
