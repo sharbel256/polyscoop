@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from "react";
-import { useWallet } from "@/providers/WalletContext";
+import { useWallet } from "@/hooks/useWallet";
 import { ClobClient } from "@polymarket/clob-client";
 import { CLOB_API_URL, POLYGON_CHAIN_ID } from "@/constants/polymarket";
 
@@ -19,14 +19,13 @@ export default function useUserApiCredentials() {
 
   const createOrDeriveUserApiCredentials =
     useCallback(async (): Promise<UserApiCredentials> => {
-      if (!eoaAddress || !ethersSigner)
-        throw new Error("Wallet not connected");
+      if (!eoaAddress || !ethersSigner) throw new Error("Wallet not connected");
 
       // Temporary L1-only client for credential derivation
       const tempClient = new ClobClient(
         CLOB_API_URL,
         POLYGON_CHAIN_ID,
-        ethersSigner as any
+        ethersSigner,
       );
 
       try {

@@ -1,0 +1,33 @@
+name: Unit Tests
+
+on:
+  push:
+  pull_request:
+    types: [opened, reopened]
+    paths:
+      - "backend/**"
+      - "tests/**"
+      - "migrations/**"
+
+jobs:
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: uv sync
+
+      - name: Run tests
+        run: uv run pytest -v

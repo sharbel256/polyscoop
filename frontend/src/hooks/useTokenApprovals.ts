@@ -24,7 +24,7 @@ export default function useTokenApprovals() {
         const approvalTxs = createAllApprovalTxs();
         const response = await relayClient.execute(
           approvalTxs,
-          "Set all token approvals for trading"
+          "Set all token approvals for trading",
         );
         await response.wait();
         return true;
@@ -33,7 +33,7 @@ export default function useTokenApprovals() {
         return false;
       }
     },
-    []
+    [],
   );
 
   return {

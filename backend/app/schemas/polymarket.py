@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 # ── Builder signing ──────────────────────────────────────
 
+
 class SignRequest(BaseModel):
     method: str
     path: str
@@ -18,6 +19,7 @@ class SignResponse(BaseModel):
 
 
 # ── Market data ──────────────────────────────────────────
+
 
 class MarketToken(BaseModel):
     token_id: str

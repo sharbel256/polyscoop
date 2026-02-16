@@ -1,6 +1,8 @@
 """Centralised exception handlers for the FastAPI application."""
 
 import logging
+from collections.abc import Sequence
+from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -11,7 +13,9 @@ from app.core.logging import correlation_id_ctx
 logger = logging.getLogger(__name__)
 
 
-def _error_body(status: int, detail: str | list, *, error_type: str = "error") -> dict:
+def _error_body(
+    status: int, detail: str | Sequence[Any], *, error_type: str = "error"
+) -> dict[str, Any]:
     """Standard JSON error envelope."""
     return {
         "error": {

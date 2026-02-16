@@ -1,0 +1,58 @@
+name: Check Formatting
+
+on:
+  push:
+  pull_request:
+    types: [opened, reopened]
+jobs:
+  check-backend:
+    name: Backend (ruff + pyright)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: uv sync
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      - name: Pyright
+        run: uv run pyright app/
+
+  check-frontend:
+    name: Frontend (prettier + eslint + tsc)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+
+      - name: Prettier
+        run: bun run format:check
+
+      - name: ESLint
+        run: bun run lint
+
+      - name: TypeScript
+        run: bun run typecheck

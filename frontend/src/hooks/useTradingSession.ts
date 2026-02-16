@@ -12,7 +12,7 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
-import { useWallet } from "@/providers/WalletContext";
+import { useWallet } from "@/hooks/useWallet";
 
 import useUserApiCredentials from "@/hooks/useUserApiCredentials";
 import useTokenApprovals from "@/hooks/useTokenApprovals";
@@ -31,7 +31,7 @@ export type { SessionStep };
 
 export function useTradingSession() {
   const [tradingSession, setTradingSession] = useState<TradingSession | null>(
-    null
+    null,
   );
   const [currentStep, setCurrentStep] = useState<SessionStep>("idle");
   const [sessionError, setSessionError] = useState<Error | null>(null);
@@ -105,9 +105,9 @@ export function useTradingSession() {
       }
 
       // Step 3: Check if Safe is deployed
-      let isDeployed = await isSafeDeployed(
+      const isDeployed = await isSafeDeployed(
         initializedRelayClient,
-        derivedSafeAddressFromEoa
+        derivedSafeAddressFromEoa,
       );
 
       // Step 4: Deploy Safe if not already deployed
@@ -132,7 +132,7 @@ export function useTradingSession() {
       // Step 6: Set all required token approvals for trading
       setCurrentStep("approvals");
       const approvalStatus = await checkAllTokenApprovals(
-        derivedSafeAddressFromEoa
+        derivedSafeAddressFromEoa,
       );
 
       let hasApprovals = false;

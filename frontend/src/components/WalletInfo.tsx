@@ -1,4 +1,4 @@
-import { useWallet } from "@/providers/WalletContext";
+import { useWallet } from "@/hooks/useWallet";
 import { useBalance } from "wagmi";
 import { polygon } from "wagmi/chains";
 import { shortenAddress } from "@/lib/utils";
@@ -46,17 +46,13 @@ export function WalletInfo() {
         <div className="flex items-center justify-between rounded-lg bg-surface-dark-2 px-3 py-2">
           <span className="text-xs text-gray-500">MATIC</span>
           <span className="font-mono text-sm font-medium text-gray-200">
-            {maticBalance
-              ? parseFloat(maticBalance.formatted).toFixed(4)
-              : "–"}
+            {maticBalance ? parseFloat(maticBalance.formatted).toFixed(4) : "–"}
           </span>
         </div>
         <div className="flex items-center justify-between rounded-lg bg-surface-dark-2 px-3 py-2">
           <span className="text-xs text-gray-500">USDC.e</span>
           <span className="font-mono text-sm font-medium text-gray-200">
-            {usdcBalance
-              ? parseFloat(usdcBalance.formatted).toFixed(2)
-              : "–"}
+            {usdcBalance ? parseFloat(usdcBalance.formatted).toFixed(2) : "–"}
           </span>
         </div>
       </div>

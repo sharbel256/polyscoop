@@ -30,18 +30,18 @@ FILE_FORMAT = (
 )
 
 CONSOLE_FORMAT = (
-    "\033[2m%(asctime)s\033[0m "           # dim timestamp
-    "%(levelcolor)s%(levelname)-8s\033[0m " # colored level
-    "\033[36m%(agi_correlation_id)s\033[0m " # cyan correlation id
-    "\033[2m%(name)s:%(funcName)s:%(lineno)d\033[0m " # dim location
+    "\033[2m%(asctime)s\033[0m "  # dim timestamp
+    "%(levelcolor)s%(levelname)-8s\033[0m "  # colored level
+    "\033[36m%(agi_correlation_id)s\033[0m "  # cyan correlation id
+    "\033[2m%(name)s:%(funcName)s:%(lineno)d\033[0m "  # dim location
     "%(message)s"
 )
 
 LEVEL_COLORS = {
-    "DEBUG": "\033[34m",     # blue
-    "INFO": "\033[32m",      # green
-    "WARNING": "\033[33m",   # yellow
-    "ERROR": "\033[31m",     # red
+    "DEBUG": "\033[34m",  # blue
+    "INFO": "\033[32m",  # green
+    "WARNING": "\033[33m",  # yellow
+    "ERROR": "\033[31m",  # red
     "CRITICAL": "\033[1;31m",  # bold red
 }
 

@@ -6,7 +6,7 @@
 import { useMemo } from "react";
 import type { TradingSession } from "@/utils/session";
 import { ClobClient } from "@polymarket/clob-client";
-import { useWallet } from "@/providers/WalletContext";
+import { useWallet } from "@/hooks/useWallet";
 import useSafeDeployment from "@/hooks/useSafeDeployment";
 import { BuilderConfig } from "@polymarket/builder-signing-sdk";
 import {
@@ -17,7 +17,7 @@ import {
 
 export default function useClobClient(
   tradingSession: TradingSession | null,
-  isTradingSessionComplete: boolean | undefined
+  isTradingSessionComplete: boolean | undefined,
 ) {
   const { eoaAddress, ethersSigner } = useWallet();
   const { derivedSafeAddressFromEoa } = useSafeDeployment();
@@ -48,7 +48,7 @@ export default function useClobClient(
       derivedSafeAddressFromEoa,
       undefined, // mandatory placeholder
       false,
-      builderConfig
+      builderConfig,
     );
   }, [
     eoaAddress,

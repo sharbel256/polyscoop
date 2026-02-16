@@ -1,4 +1,4 @@
-import { useWallet } from "@/providers/WalletContext";
+import { useWallet } from "@/hooks/useWallet";
 import { useTradingSession, type SessionStep } from "@/hooks/useTradingSession";
 import { shortenAddress } from "@/lib/utils";
 import {
@@ -42,9 +42,7 @@ export function SessionPanel() {
   return (
     <div className="card">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-300">
-          Trading Session
-        </h3>
+        <h3 className="text-sm font-semibold text-gray-300">Trading Session</h3>
 
         {isReady && (
           <button
