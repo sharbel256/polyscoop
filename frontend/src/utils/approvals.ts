@@ -77,7 +77,7 @@ const defaultPublicClient = createPublicClient({
 async function checkUsdcApproval(
   safeAddress: string,
   spender: string,
-  client: PublicClient = defaultPublicClient as PublicClient
+  client: PublicClient = defaultPublicClient as PublicClient,
 ): Promise<boolean> {
   try {
     const allowance = await client.readContract({
@@ -96,7 +96,7 @@ async function checkUsdcApproval(
 async function checkErc1155Approval(
   safeAddress: string,
   operator: string,
-  client: PublicClient = defaultPublicClient as PublicClient
+  client: PublicClient = defaultPublicClient as PublicClient,
 ): Promise<boolean> {
   try {
     const isApproved = await client.readContract({
@@ -114,7 +114,7 @@ async function checkErc1155Approval(
 
 /** Check all required token approvals and return a summary. */
 export const checkAllApprovals = async (
-  safeAddress: string
+  safeAddress: string,
 ): Promise<{
   allApproved: boolean;
   usdcApprovals: Record<string, boolean>;
@@ -126,16 +126,16 @@ export const checkAllApprovals = async (
   await Promise.all(
     USDC_SPENDERS.map(async ({ address, name }) => {
       usdcApprovals[name] = await checkUsdcApproval(safeAddress, address);
-    })
+    }),
   );
 
   await Promise.all(
     OUTCOME_TOKEN_OPERATORS.map(async ({ address, name }) => {
       outcomeTokenApprovals[name] = await checkErc1155Approval(
         safeAddress,
-        address
+        address,
       );
-    })
+    }),
   );
 
   const allApproved =

@@ -1,5 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchMarkets, fetchMarket, fetchOrderbook, type FetchMarketsParams } from "@/lib/api";
+import {
+  fetchMarkets,
+  fetchMarket,
+  fetchOrderbook,
+  type FetchMarketsParams,
+} from "@/lib/api";
 
 export function useMarkets(params: FetchMarketsParams = {}) {
   return useQuery({

@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback } from "react";
-import { useWallet } from "@/providers/WalletContext";
+import { useWallet } from "@/hooks/useWallet";
 import { BuilderConfig } from "@polymarket/builder-signing-sdk";
 import { RelayClient } from "@polymarket/builder-relayer-client";
 import {
@@ -34,7 +34,7 @@ export default function useRelayClient() {
         RELAYER_URL,
         POLYGON_CHAIN_ID,
         ethersSigner,
-        builderConfig
+        builderConfig,
       );
 
       setRelayClient(client);

@@ -53,22 +53,47 @@ build-and-serve:
     just build-frontend
     just dev-backend
 
+# ── Format ───────────────────────────────────────────────
+
+# Format backend (ruff)
+fmt-backend:
+    cd backend && uv run ruff check . --fix && uv run ruff format .
+
+# Format frontend (prettier)
+fmt-frontend:
+    cd frontend && bun run format
+
+# Format everything
+fmt: fmt-backend fmt-frontend
+
 # ── Quality ──────────────────────────────────────────────
 
-# Lint & format backend
+# Lint backend
 lint-backend:
-    cd backend && uv run ruff check . --fix && uv run ruff format .
+    cd backend && uv run ruff check .
 
 # Lint frontend
 lint-frontend:
     cd frontend && bun run lint
 
+# Type-check backend
+typecheck-backend:
+    cd backend && uv run pyright app/
+
 # Type-check frontend
 typecheck-frontend:
     cd frontend && bun run typecheck
 
-# Run all checks
-lint: lint-backend lint-frontend
+# Check backend (lint + format + types)
+check-backend:
+    cd backend && uv run ruff check . && uv run ruff format --check . && uv run pyright app/
+
+# Check frontend (format + lint + types)
+check-frontend:
+    cd frontend && bun run format:check && bun run lint && bun run typecheck
+
+# Run all checks (lint + format + types)
+check: check-backend check-frontend
 
 # ── Testing ──────────────────────────────────────────────
 

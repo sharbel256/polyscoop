@@ -82,14 +82,17 @@ export interface FetchMarketsParams {
   ascending?: boolean;
 }
 
-export function fetchMarkets(params: FetchMarketsParams = {}): Promise<MarketsResponse> {
+export function fetchMarkets(
+  params: FetchMarketsParams = {},
+): Promise<MarketsResponse> {
   const qs = new URLSearchParams();
   if (params.limit) qs.set("limit", String(params.limit));
   if (params.offset) qs.set("offset", String(params.offset));
   if (params.active !== undefined) qs.set("active", String(params.active));
   if (params.closed !== undefined) qs.set("closed", String(params.closed));
   if (params.order) qs.set("order", params.order);
-  if (params.ascending !== undefined) qs.set("ascending", String(params.ascending));
+  if (params.ascending !== undefined)
+    qs.set("ascending", String(params.ascending));
 
   const query = qs.toString();
   return request<MarketsResponse>(`/markets${query ? `?${query}` : ""}`);

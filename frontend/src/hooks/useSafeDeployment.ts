@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useMemo } from "react";
-import { useWallet } from "@/providers/WalletContext";
+import { useWallet } from "@/hooks/useWallet";
 import type { RelayClient } from "@polymarket/builder-relayer-client";
 import { deriveSafe } from "@polymarket/builder-relayer-client/dist/builder/derive";
 import { getContractConfig } from "@polymarket/builder-relayer-client/dist/config";
@@ -28,12 +28,9 @@ export default function useSafeDeployment() {
 
   /** Check if the Safe is deployed by querying the relay client or RPC. */
   const isSafeDeployed = useCallback(
-    async (
-      relayClient: RelayClient,
-      safeAddr: string
-    ): Promise<boolean> => {
+    async (relayClient: RelayClient, safeAddr: string): Promise<boolean> => {
       try {
-        const deployed = await (relayClient as any).getDeployed(safeAddr);
+        const deployed = await relayClient.getDeployed(safeAddr);
         return deployed;
       } catch (err) {
         console.warn("API check failed, falling back to RPC", err);
@@ -46,7 +43,7 @@ export default function useSafeDeployment() {
         return false;
       }
     },
-    [publicClient]
+    [publicClient],
   );
 
   /** Deploy the Safe using the relayClient (prompts user for signature). */
@@ -65,7 +62,7 @@ export default function useSafeDeployment() {
         throw error;
       }
     },
-    []
+    [],
   );
 
   return {

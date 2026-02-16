@@ -11,9 +11,7 @@ export function PortfolioPage() {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <Briefcase className="mb-4 h-12 w-12 text-gray-600" />
-        <h2 className="text-xl font-bold text-white">
-          Connect your wallet
-        </h2>
+        <h2 className="text-xl font-bold text-white">Connect your wallet</h2>
         <p className="mt-2 max-w-md text-sm text-gray-500">
           Link your wallet to view your Polymarket positions, open orders, and
           trade history.

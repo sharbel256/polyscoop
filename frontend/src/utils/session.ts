@@ -26,7 +26,7 @@ const STORAGE_PREFIX = "polymarket_trading_session_";
 
 export const loadSession = (address: string): TradingSession | null => {
   const stored = localStorage.getItem(
-    `${STORAGE_PREFIX}${address.toLowerCase()}`
+    `${STORAGE_PREFIX}${address.toLowerCase()}`,
   );
   if (!stored) return null;
 
@@ -44,13 +44,10 @@ export const loadSession = (address: string): TradingSession | null => {
   }
 };
 
-export const saveSession = (
-  address: string,
-  session: TradingSession
-): void => {
+export const saveSession = (address: string, session: TradingSession): void => {
   localStorage.setItem(
     `${STORAGE_PREFIX}${address.toLowerCase()}`,
-    JSON.stringify(session)
+    JSON.stringify(session),
   );
 };
 
