@@ -29,7 +29,7 @@ def _safe_correlation_id(raw: str | None) -> str:
 
 class CorrelationIdMiddleware(BaseHTTPMiddleware):
     """
-    Generates (or propagates) an ``agi_correlation_id`` for every request.
+    Generates (or propagates) a ``request_id`` for every request.
 
     * Reads from the incoming ``X-Request-ID`` header if present.
     * Validates it against a strict pattern (alphanumeric, hyphens, max 64).

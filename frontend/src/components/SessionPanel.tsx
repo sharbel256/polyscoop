@@ -12,12 +12,12 @@ import {
 } from "lucide-react";
 
 const STEP_INFO: Record<SessionStep, { label: string; icon: typeof Wallet }> = {
-  idle: { label: "Not started", icon: Wallet },
-  checking: { label: "Checking session...", icon: Wallet },
-  deploying: { label: "Deploying Safe...", icon: ShieldCheck },
-  credentials: { label: "Getting API credentials...", icon: Key },
-  approvals: { label: "Setting token approvals...", icon: ShieldCheck },
-  complete: { label: "Session active", icon: CheckCircle2 },
+  idle: { label: "not started", icon: Wallet },
+  checking: { label: "checking session...", icon: Wallet },
+  deploying: { label: "deploying safe...", icon: ShieldCheck },
+  credentials: { label: "getting api credentials...", icon: Key },
+  approvals: { label: "setting token approvals...", icon: ShieldCheck },
+  complete: { label: "session active", icon: CheckCircle2 },
 };
 
 export function SessionPanel() {
@@ -42,7 +42,7 @@ export function SessionPanel() {
   return (
     <div className="card">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-300">Trading Session</h3>
+        <h3 className="text-sm font-semibold text-gray-300">trading session</h3>
 
         {isReady && (
           <button
@@ -50,7 +50,7 @@ export function SessionPanel() {
             className="btn-ghost text-xs text-gray-500"
           >
             <LogOut className="h-3.5 w-3.5" />
-            End
+            end
           </button>
         )}
       </div>
@@ -79,7 +79,7 @@ export function SessionPanel() {
                 : "text-gray-400"
           }`}
         >
-          {hasError ? "Error" : info.label}
+          {hasError ? "error" : info.label}
         </span>
       </div>
 
@@ -92,20 +92,20 @@ export function SessionPanel() {
       {tradingSession && (
         <div className="mt-3 space-y-1.5 text-xs text-gray-500">
           <div className="flex justify-between">
-            <span>EOA</span>
+            <span>eoa</span>
             <span className="font-mono text-gray-400">
               {shortenAddress(tradingSession.eoaAddress)}
             </span>
           </div>
           <div className="flex justify-between">
-            <span>Safe</span>
+            <span>safe</span>
             <span className="font-mono text-gray-400">
               {shortenAddress(tradingSession.safeAddress)}
             </span>
           </div>
           {tradingSession.apiCredentials && (
             <div className="flex justify-between">
-              <span>API Key</span>
+              <span>api key</span>
               <span className="font-mono text-gray-400">
                 {tradingSession.apiCredentials.key.slice(0, 8)}...
               </span>
@@ -121,7 +121,7 @@ export function SessionPanel() {
           className="btn-primary mt-4 w-full"
         >
           <ShieldCheck className="h-4 w-4" />
-          Initialize Trading Session
+          initialize trading session
         </button>
       )}
 
@@ -130,7 +130,7 @@ export function SessionPanel() {
           onClick={initializeTradingSession}
           className="btn-primary mt-4 w-full"
         >
-          Retry
+          retry
         </button>
       )}
     </div>

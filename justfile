@@ -107,6 +107,19 @@ test-frontend:
 
 test: test-backend test-frontend
 
+# ── Docker ───────────────────────────────────────────────
+
+# Build Docker image locally
+docker-build:
+    docker build \
+        --build-arg VITE_WALLETCONNECT_PROJECT_ID="${VITE_WALLETCONNECT_PROJECT_ID:-}" \
+        --build-arg VITE_POLYGON_RPC_URL="${VITE_POLYGON_RPC_URL:-https://polygon-rpc.com}" \
+        -t polyscoop:local .
+
+# Run Docker image locally
+docker-run:
+    docker run --rm -p 8000:8000 --env-file .env polyscoop:local
+
 # ── Utilities ────────────────────────────────────────────
 
 # Generate a random secret key

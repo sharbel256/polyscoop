@@ -62,6 +62,7 @@ export interface MarketSummary {
   closed: boolean;
   volume: number;
   liquidity: number;
+  neg_risk: boolean;
   tokens: MarketToken[];
   best_bid: number | null;
   best_ask: number | null;
@@ -104,14 +105,97 @@ export function fetchMarket(conditionId: string): Promise<MarketSummary> {
 
 // ── Orderbook ─────────────────────────────────────────────
 
-export interface OrderbookSummary {
-  token_id: string;
-  bids: Array<{ price: string; size: string }>;
-  asks: Array<{ price: string; size: string }>;
-  spread: number | null;
-  mid_price: number | null;
+export interface OrderbookLevel {
+  price: string;
+  size: string;
 }
 
-export function fetchOrderbook(tokenId: string): Promise<OrderbookSummary> {
-  return request<OrderbookSummary>(`/markets/${tokenId}/orderbook`);
+export interface OrderbookAnalysis {
+  token_id: string;
+  bids: OrderbookLevel[];
+  asks: OrderbookLevel[];
+  spread: number | null;
+  mid_price: number | null;
+  bid_depth: number;
+  ask_depth: number;
+  imbalance_ratio: number | null;
+  bid_walls: OrderbookLevel[];
+  ask_walls: OrderbookLevel[];
+}
+
+export function fetchOrderbook(tokenId: string): Promise<OrderbookAnalysis> {
+  return request<OrderbookAnalysis>(`/markets/${tokenId}/orderbook`);
+}
+
+// ── Trades ────────────────────────────────────────────────
+
+export interface TradeRecord {
+  wallet: string;
+  market: string;
+  asset_id: string;
+  side: string;
+  size: number;
+  price: number;
+  timestamp: number;
+  outcome: string;
+  transaction_hash: string;
+  title: string;
+}
+
+export interface TradesResponse {
+  trades: TradeRecord[];
+  count: number;
+}
+
+export function fetchTrades(
+  market: string,
+  limit = 50,
+): Promise<TradesResponse> {
+  return request<TradesResponse>(
+    `/trades?market=${encodeURIComponent(market)}&limit=${limit}`,
+  );
+}
+
+// ── Price History ─────────────────────────────────────────
+
+export interface PricePoint {
+  t: number;
+  p: number;
+}
+
+export interface PriceHistoryResponse {
+  history: PricePoint[];
+}
+
+export function fetchPriceHistory(
+  market: string,
+  interval = "1h",
+  fidelity = 100,
+): Promise<PriceHistoryResponse> {
+  const qs = new URLSearchParams({
+    market,
+    interval,
+    fidelity: String(fidelity),
+  });
+  return request<PriceHistoryResponse>(`/prices/history?${qs}`);
+}
+
+// ── Positions ─────────────────────────────────────────────
+
+export interface Position {
+  asset: string;
+  conditionId: string;
+  size: number;
+  currentValue: number;
+  cashPnl: number;
+  percentPnl: number;
+  curPrice: number;
+  title: string;
+  outcome: string;
+  icon: string;
+  slug: string;
+}
+
+export function fetchPositions(user: string): Promise<Position[]> {
+  return request<Position[]>(`/positions?user=${encodeURIComponent(user)}`);
 }

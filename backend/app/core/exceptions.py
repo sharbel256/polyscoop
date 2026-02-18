@@ -22,7 +22,7 @@ def _error_body(
             "type": error_type,
             "status": status,
             "detail": detail,
-            "agi_correlation_id": correlation_id_ctx.get("-"),
+            "request_id": correlation_id_ctx.get("-"),
         }
     }
 

@@ -5,17 +5,12 @@ import hmac
 import logging
 import time
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 
 from app.core.config import settings
-from app.core.security import require_internal_api_key
 from app.schemas.polymarket import SignRequest, SignResponse
 
-router = APIRouter(
-    prefix="/signing",
-    tags=["signing"],
-    dependencies=[Depends(require_internal_api_key)],
-)
+router = APIRouter(prefix="/signing", tags=["signing"])
 logger = logging.getLogger(__name__)
 
 

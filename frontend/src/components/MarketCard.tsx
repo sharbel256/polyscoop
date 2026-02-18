@@ -1,21 +1,21 @@
+import { Link } from "react-router-dom";
 import { cn, formatCompact, formatPercent } from "@/lib/utils";
 import { type MarketSummary } from "@/lib/api";
 import { TrendingUp, Clock, BarChart3 } from "lucide-react";
 
 interface MarketCardProps {
   market: MarketSummary;
-  onClick?: () => void;
 }
 
-export function MarketCard({ market, onClick }: MarketCardProps) {
+export function MarketCard({ market }: MarketCardProps) {
   const yesPrice = market.tokens.find((t) => t.outcome === "Yes")?.price;
   const noPrice = market.tokens.find((t) => t.outcome === "No")?.price;
 
   return (
-    <button
-      onClick={onClick}
+    <Link
+      to={`/market/${market.condition_id}`}
       className={cn(
-        "card group w-full text-left transition-all",
+        "card group block w-full text-left transition-all",
         "hover:border-brand-700/50 hover:shadow-brand-900/20 hover:shadow-xl",
         "active:scale-[0.995]",
       )}
@@ -59,7 +59,7 @@ export function MarketCard({ market, onClick }: MarketCardProps) {
         {/* Yes */}
         <div className="flex-1">
           <div className="mb-1 flex items-center justify-between text-xs">
-            <span className="font-medium text-emerald-400">Yes</span>
+            <span className="font-medium text-emerald-400">yes</span>
             <span className="font-mono font-semibold text-emerald-400">
               {yesPrice != null ? formatPercent(yesPrice) : "–"}
             </span>
@@ -75,7 +75,7 @@ export function MarketCard({ market, onClick }: MarketCardProps) {
         {/* No */}
         <div className="flex-1">
           <div className="mb-1 flex items-center justify-between text-xs">
-            <span className="font-medium text-red-400">No</span>
+            <span className="font-medium text-red-400">no</span>
             <span className="font-mono font-semibold text-red-400">
               {noPrice != null ? formatPercent(noPrice) : "–"}
             </span>
@@ -93,14 +93,14 @@ export function MarketCard({ market, onClick }: MarketCardProps) {
       <div className="mt-4 flex items-center gap-4 border-t border-surface-dark-3 pt-3 text-xs text-gray-500">
         <span className="flex items-center gap-1">
           <TrendingUp className="h-3 w-3" />
-          Vol: {formatCompact(market.volume)}
+          vol: {formatCompact(market.volume)}
         </span>
-        <span>Liq: {formatCompact(market.liquidity)}</span>
-        {market.closed && <span className="badge-red">Closed</span>}
+        <span>liq: {formatCompact(market.liquidity)}</span>
+        {market.closed && <span className="badge-red">closed</span>}
         {!market.active && !market.closed && (
-          <span className="badge-gray">Inactive</span>
+          <span className="badge-gray">inactive</span>
         )}
       </div>
-    </button>
+    </Link>
   );
 }
