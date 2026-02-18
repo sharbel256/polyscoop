@@ -1,0 +1,66 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: polyscoop
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Build & Deploy to App Runner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image
+        id: build
+        env:
+          ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE="$ECR_REGISTRY/$ECR_REPOSITORY"
+          docker build \
+            --build-arg VITE_WALLETCONNECT_PROJECT_ID="${{ vars.VITE_WALLETCONNECT_PROJECT_ID }}" \
+            --build-arg VITE_POLYGON_RPC_URL="${{ vars.VITE_POLYGON_RPC_URL }}" \
+            -t "$IMAGE:$IMAGE_TAG" -t "$IMAGE:latest" .
+          docker push "$IMAGE:$IMAGE_TAG"
+          docker push "$IMAGE:latest"
+          echo "image=$IMAGE:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to App Runner
+        env:
+          IMAGE: ${{ steps.build.outputs.image }}
+        run: |
+          aws apprunner update-service \
+            --service-arn "${{ secrets.APPRUNNER_SERVICE_ARN }}" \
+            --source-configuration "{
+              \"ImageRepository\": {
+                \"ImageIdentifier\": \"$IMAGE\",
+                \"ImageRepositoryType\": \"ECR\",
+                \"ImageConfiguration\": {
+                  \"Port\": \"8000\"
+                }
+              },
+              \"AutoDeploymentsEnabled\": false,
+              \"AuthenticationConfiguration\": {
+                \"AccessRoleArn\": \"${{ secrets.APPRUNNER_ECR_ROLE_ARN }}\"
+              }
+            }"
+          echo "Deployment triggered for $IMAGE"

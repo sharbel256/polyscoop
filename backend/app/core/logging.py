@@ -8,31 +8,31 @@ from contextvars import ContextVar
 from pathlib import Path
 
 # Context variable holding the current request's correlation ID.
-correlation_id_ctx: ContextVar[str] = ContextVar("agi_correlation_id", default="-")
+correlation_id_ctx: ContextVar[str] = ContextVar("request_id", default="-")
 
 LOG_DIR = Path(os.getenv("LOG_DIR", "logs"))
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
 
 class CorrelationIdFilter(logging.Filter):
-    """Inject ``agi_correlation_id`` into every log record."""
+    """Inject ``request_id`` into every log record."""
 
     def filter(self, record: logging.LogRecord) -> bool:
-        record.agi_correlation_id = correlation_id_ctx.get("-")  # type: ignore[attr-defined]
+        record.request_id = correlation_id_ctx.get("-")  # type: ignore[attr-defined]
         return True
 
 
 # ── Formatters ────────────────────────────────────────────────
 
 FILE_FORMAT = (
-    "%(asctime)s | %(levelname)-8s | %(agi_correlation_id)s "
+    "%(asctime)s | %(levelname)-8s | %(request_id)s "
     "| %(name)s:%(funcName)s:%(lineno)d | %(message)s"
 )
 
 CONSOLE_FORMAT = (
     "\033[2m%(asctime)s\033[0m "  # dim timestamp
     "%(levelcolor)s%(levelname)-8s\033[0m "  # colored level
-    "\033[36m%(agi_correlation_id)s\033[0m "  # cyan correlation id
+    "\033[36m%(request_id)s\033[0m "  # cyan correlation id
     "\033[2m%(name)s:%(funcName)s:%(lineno)d\033[0m "  # dim location
     "%(message)s"
 )

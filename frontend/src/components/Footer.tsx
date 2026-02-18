@@ -9,14 +9,14 @@ export function Footer() {
           <span>polyscoop</span>
         </div>
         <div className="flex items-center gap-4 text-xs text-gray-600">
-          <span>Powered by Polymarket</span>
+          <span>powered by polymarket</span>
           <a
             href="https://github.com/Polymarket"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-brand-400"
           >
-            GitHub
+            github
           </a>
         </div>
       </div>

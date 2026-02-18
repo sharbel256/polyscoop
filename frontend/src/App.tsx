@@ -4,6 +4,9 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { HomePage } from "@/pages/HomePage";
 import { PortfolioPage } from "@/pages/PortfolioPage";
+import { MarketDetailPage } from "@/pages/MarketDetailPage";
+import { WalletPage } from "@/pages/WalletPage";
+import { ComingSoonPage } from "@/pages/ComingSoonPage";
 
 function AppLayout() {
   return (
@@ -13,6 +16,8 @@ function AppLayout() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
+          <Route path="/market/:conditionId" element={<MarketDetailPage />} />
+          <Route path="/wallet/:address" element={<WalletPage />} />
         </Routes>
       </main>
       <Footer />
@@ -21,6 +26,10 @@ function AppLayout() {
 }
 
 export default function App() {
+  if (!import.meta.env.DEV) {
+    return <ComingSoonPage />;
+  }
+
   return (
     <Providers>
       <BrowserRouter>

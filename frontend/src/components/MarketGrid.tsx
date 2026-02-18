@@ -4,9 +4,9 @@ import { MarketCard } from "./MarketCard";
 import { Loader2, AlertCircle, Search, SlidersHorizontal } from "lucide-react";
 
 const SORT_OPTIONS = [
-  { label: "Volume", value: "volume" },
-  { label: "Liquidity", value: "liquidity" },
-  { label: "Newest", value: "end_date" },
+  { label: "volume", value: "volume" },
+  { label: "liquidity", value: "liquidity" },
+  { label: "newest", value: "end_date" },
 ];
 
 export function MarketGrid() {
@@ -26,9 +26,9 @@ export function MarketGrid() {
       {/* Toolbar */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-xl font-bold text-white">Prediction Markets</h2>
+          <h2 className="text-xl font-bold text-white">prediction markets</h2>
           <p className="mt-0.5 text-sm text-gray-500">
-            Browse live markets on Polymarket
+            browse live markets on polymarket
           </p>
         </div>
 
@@ -37,7 +37,7 @@ export function MarketGrid() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
             <input
               type="text"
-              placeholder="Search markets..."
+              placeholder="search markets..."
               className="input pl-9"
               style={{ maxWidth: "240px" }}
             />
@@ -77,9 +77,9 @@ export function MarketGrid() {
         <div className="card flex items-center gap-3 border-red-900/50 bg-red-950/30 text-red-400">
           <AlertCircle className="h-5 w-5 flex-shrink-0" />
           <div>
-            <p className="font-medium">Failed to load markets</p>
+            <p className="font-medium">failed to load markets</p>
             <p className="mt-0.5 text-sm text-red-400/70">
-              {error instanceof Error ? error.message : "Unknown error"}
+              {error instanceof Error ? error.message : "unknown error"}
             </p>
           </div>
         </div>
@@ -96,7 +96,7 @@ export function MarketGrid() {
 
           {data.markets.length === 0 && !isLoading && (
             <div className="py-20 text-center text-gray-500">
-              No markets found
+              no markets found
             </div>
           )}
 
@@ -107,10 +107,10 @@ export function MarketGrid() {
               disabled={page === 0}
               className="btn-secondary"
             >
-              Previous
+              previous
             </button>
             <span className="text-sm text-gray-500">
-              Page {page + 1}
+              page {page + 1}
               {isFetching && (
                 <Loader2 className="ml-2 inline h-3 w-3 animate-spin" />
               )}
@@ -120,7 +120,7 @@ export function MarketGrid() {
               disabled={!data.next_cursor}
               className="btn-secondary"
             >
-              Next
+              next
             </button>
           </div>
         </>

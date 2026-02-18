@@ -20,12 +20,12 @@ function HeroSection() {
           </span>
         </div>
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-          Your lens into
+          your lens into
           <br />
           prediction markets
         </h1>
         <p className="mt-3 max-w-lg text-gray-400">
-          Connect your wallet to explore Polymarket data, track positions, and
+          connect your wallet to explore polymarket data, track positions, and
           trade with builder attribution — all in one place.
         </p>
 
@@ -36,9 +36,9 @@ function HeroSection() {
         {/* Feature pills */}
         <div className="mt-8 flex flex-wrap gap-3">
           {[
-            { icon: Zap, label: "Gasless trading" },
-            { icon: Shield, label: "Safe wallet" },
-            { icon: BarChart3, label: "Real-time data" },
+            { icon: Zap, label: "gasless trading" },
+            { icon: Shield, label: "safe wallet" },
+            { icon: BarChart3, label: "real-time data" },
           ].map(({ icon: Icon, label }) => (
             <span
               key={label}
@@ -74,7 +74,7 @@ export function HomePage() {
       {!isConnected && (
         <div className="py-12 text-center">
           <p className="text-gray-500">
-            Connect your wallet above to browse markets and start trading.
+            connect your wallet above to browse markets and start trading.
           </p>
         </div>
       )}

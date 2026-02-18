@@ -11,6 +11,10 @@
     @apply bg-surface-dark-0 text-gray-100;
   }
 
+  button {
+    text-transform: lowercase;
+  }
+
   ::-webkit-scrollbar {
     @apply w-2;
   }
