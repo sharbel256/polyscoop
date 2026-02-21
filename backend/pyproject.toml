@@ -15,6 +15,12 @@ dependencies = [
     "ruff",
     "pyright",
     "pytest",
+    "asyncpg",
+    "sqlalchemy[asyncio]",
+    "alembic",
+    "redis[hiredis]",
+    "websockets",
+    "psycopg2-binary>=2.9.11",
 ]
 
 [tool.ruff]

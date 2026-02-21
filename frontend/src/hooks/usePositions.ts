@@ -6,7 +6,7 @@ export function usePositions(safeAddress: string | undefined) {
     queryKey: ["positions", safeAddress],
     queryFn: () => fetchPositions(safeAddress!),
     enabled: !!safeAddress,
-    refetchInterval: 5_000,
+    refetchInterval: 30_000,
   });
 
   const totalPositionsValue =

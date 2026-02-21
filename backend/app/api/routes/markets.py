@@ -8,7 +8,14 @@ import httpx
 from fastapi import APIRouter, HTTPException, Path, Query
 
 from app.core.config import settings
-from app.schemas.polymarket import MarketsResponse, MarketSummary, OrderbookAnalysis
+from app.schemas.polymarket import (
+    EventsResponse,
+    EventSummary,
+    MarketsResponse,
+    MarketSummary,
+    OrderbookAnalysis,
+    Tag,
+)
 
 router = APIRouter(prefix="/markets", tags=["markets"])
 logger = logging.getLogger(__name__)
@@ -82,6 +89,138 @@ def _parse_gamma_market(raw: dict) -> MarketSummary:
     )
 
 
+def _parse_gamma_event(raw: dict) -> EventSummary:
+    """Convert a Gamma API event object into our schema."""
+    raw_markets = raw.get("markets", [])
+    markets = []
+    if raw_markets:
+        for m in raw_markets:
+            # Skip closed/resolved markets within events
+            if m.get("closed", False):
+                continue
+            markets.append(_parse_gamma_market(m))
+
+    raw_tags = raw.get("tags", [])
+    tags = []
+    if raw_tags and isinstance(raw_tags, list):
+        for t in raw_tags:
+            if isinstance(t, dict):
+                tags.append(
+                    Tag(
+                        id=str(t.get("id", "")),
+                        label=t.get("label", ""),
+                        slug=t.get("slug", ""),
+                    )
+                )
+
+    return EventSummary(
+        id=str(raw.get("id", "")),
+        title=raw.get("title", ""),
+        slug=raw.get("slug", ""),
+        description=raw.get("description", ""),
+        image=raw.get("image", ""),
+        tags=tags,
+        active=raw.get("active", True),
+        closed=raw.get("closed", False),
+        volume=float(raw.get("volume", 0) or 0),
+        liquidity=float(raw.get("liquidity", 0) or 0),
+        end_date=raw.get("endDate", raw.get("end_date_iso", "")),
+        markets=markets,
+    )
+
+
+@router.get("/tags", response_model=list[Tag])
+async def list_tags():
+    """Fetch available tags from the Polymarket Gamma API."""
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(f"{GAMMA_URL}/tags")
+            resp.raise_for_status()
+            data = resp.json()
+    except httpx.TimeoutException:
+        logger.error("gamma_timeout GET /tags")
+        raise HTTPException(status_code=504, detail="Upstream service timed out")
+    except httpx.HTTPStatusError as exc:
+        logger.error("gamma_http_error GET /tags status=%d", exc.response.status_code)
+        raise HTTPException(status_code=502, detail="Upstream service error")
+    except httpx.HTTPError as exc:
+        logger.error("gamma_connection_error GET /tags error=%s", exc)
+        raise HTTPException(status_code=502, detail="Upstream service error")
+
+    raw_tags = data if isinstance(data, list) else data.get("data", [])
+    return [
+        Tag(
+            id=str(t.get("id", "")),
+            label=t.get("label", ""),
+            slug=t.get("slug", ""),
+        )
+        for t in raw_tags
+        if isinstance(t, dict)
+    ]
+
+
+@router.get("/events", response_model=EventsResponse)
+async def list_events(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    active: bool = Query(default=True),
+    closed: bool = Query(default=False),
+    tag_id: str | None = Query(default=None),
+    order: str = Query(
+        default="volume",
+        pattern=r"^(volume|liquidity|volume_24hr|endDate)$",
+        description="Sort field: volume, liquidity, volume_24hr, endDate",
+    ),
+    ascending: bool = Query(default=False),
+):
+    """Fetch events from the Polymarket Gamma API."""
+    params: dict = {
+        "limit": limit,
+        "offset": offset,
+        "active": str(active).lower(),
+        "closed": str(closed).lower(),
+        "archived": "false",
+        "order": order,
+        "ascending": str(ascending).lower(),
+    }
+    if tag_id:
+        params["tag_id"] = tag_id
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(f"{GAMMA_URL}/events", params=params)
+            resp.raise_for_status()
+            data = resp.json()
+    except httpx.TimeoutException:
+        logger.error("gamma_timeout GET /events params=%s", params)
+        raise HTTPException(status_code=504, detail="Upstream service timed out")
+    except httpx.HTTPStatusError as exc:
+        logger.error(
+            "gamma_http_error GET /events status=%d body=%s",
+            exc.response.status_code,
+            exc.response.text[:500],
+        )
+        raise HTTPException(status_code=502, detail="Upstream service error")
+    except httpx.HTTPError as exc:
+        logger.error("gamma_connection_error GET /events error=%s", exc)
+        raise HTTPException(status_code=502, detail="Upstream service error")
+
+    events_raw = data if isinstance(data, list) else data.get("data", data.get("events", []))
+    events = [_parse_gamma_event(e) for e in events_raw]
+
+    # Drop events with no open markets after filtering
+    if active and not closed:
+        events = [e for e in events if e.markets]
+
+    logger.debug("list_events returned %d events", len(events))
+
+    return EventsResponse(
+        events=events,
+        count=len(events),
+        next_cursor=str(offset + limit) if len(events) == limit else None,
+    )
+
+
 @router.get("", response_model=MarketsResponse)
 async def list_markets(
     limit: int = Query(default=20, ge=1, le=100),
@@ -90,8 +229,8 @@ async def list_markets(
     closed: bool = Query(default=False),
     order: str = Query(
         default="volume",
-        pattern=r"^(volume|liquidity|end_date)$",
-        description="Sort field: volume, liquidity, end_date",
+        pattern=r"^(volume|liquidity|endDate)$",
+        description="Sort field: volume, liquidity, endDate",
     ),
     ascending: bool = Query(default=False),
 ):
@@ -101,6 +240,7 @@ async def list_markets(
         "offset": offset,
         "active": str(active).lower(),
         "closed": str(closed).lower(),
+        "archived": "false",
         "order": order,
         "ascending": str(ascending).lower(),
     }
@@ -126,6 +266,11 @@ async def list_markets(
 
     markets_raw = data if isinstance(data, list) else data.get("data", data.get("markets", []))
     markets = [_parse_gamma_market(m) for m in markets_raw]
+
+    # Filter out closed/resolved markets that Gamma may still return
+    if active and not closed:
+        markets = [m for m in markets if m.active and not m.closed]
+
     logger.debug("list_markets returned %d markets", len(markets))
 
     return MarketsResponse(
@@ -146,7 +291,7 @@ async def get_market(
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.get(
                 f"{GAMMA_URL}/markets",
-                params={"condition_id": condition_id, "limit": 1},
+                params={"conditionId": condition_id, "limit": 1},
             )
             resp.raise_for_status()
             data = resp.json()
@@ -207,7 +352,19 @@ async def get_orderbook(
         raise HTTPException(status_code=504, detail="Upstream service timed out")
     except httpx.HTTPStatusError as exc:
         if exc.response.status_code == 404:
-            raise HTTPException(status_code=404, detail="Orderbook not found")
+            # Return empty orderbook for markets with no active book
+            return OrderbookAnalysis(
+                token_id=token_id,
+                bids=[],
+                asks=[],
+                spread=None,
+                mid_price=None,
+                bid_depth=0.0,
+                ask_depth=0.0,
+                imbalance_ratio=None,
+                bid_walls=[],
+                ask_walls=[],
+            )
         logger.error(
             "clob_http_error GET /book token_id=%s status=%d",
             token_id,

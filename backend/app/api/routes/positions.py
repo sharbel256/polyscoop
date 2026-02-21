@@ -52,6 +52,14 @@ async def list_positions(
 
     positions_raw = data if isinstance(data, list) else []
     positions = [PositionSummary(**p) for p in positions_raw]
-    logger.debug("list_positions returned %d positions for %s", len(positions), user)
 
-    return positions
+    # Filter out resolved markets (redeemable or price settled to 0/1)
+    active = [p for p in positions if not p.redeemable and p.curPrice not in (0.0, 1.0)]
+    logger.debug(
+        "list_positions returned %d positions (%d active) for %s",
+        len(positions),
+        len(active),
+        user,
+    )
+
+    return active

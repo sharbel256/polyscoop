@@ -34,7 +34,16 @@ export function Header() {
         {/* Nav */}
         <nav className="hidden items-center gap-1 md:flex">
           <Link to="/" className="btn-ghost">
-            markets
+            dashboard
+          </Link>
+          <Link to="/leaderboard" className="btn-ghost">
+            leaderboard
+          </Link>
+          <Link to="/feed" className="btn-ghost">
+            feed
+          </Link>
+          <Link to="/copytrade" className="btn-ghost">
+            copy
           </Link>
           <Link to="/portfolio" className="btn-ghost">
             portfolio

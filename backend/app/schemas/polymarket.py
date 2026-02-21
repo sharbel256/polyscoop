@@ -18,6 +18,15 @@ class SignResponse(BaseModel):
     POLY_BUILDER_PASSPHRASE: str
 
 
+# ── Tags ─────────────────────────────────────────────────
+
+
+class Tag(BaseModel):
+    id: str = ""
+    label: str = ""
+    slug: str = ""
+
+
 # ── Market data ──────────────────────────────────────────
 
 
@@ -48,6 +57,27 @@ class MarketSummary(BaseModel):
 
 class MarketsResponse(BaseModel):
     markets: list[MarketSummary]
+    count: int
+    next_cursor: str | None = None
+
+
+class EventSummary(BaseModel):
+    id: str = ""
+    title: str = ""
+    slug: str = ""
+    description: str = ""
+    image: str = ""
+    tags: list[Tag] = []
+    active: bool = True
+    closed: bool = False
+    volume: float = 0.0
+    liquidity: float = 0.0
+    end_date: str = ""
+    markets: list[MarketSummary] = []
+
+
+class EventsResponse(BaseModel):
+    events: list[EventSummary]
     count: int
     next_cursor: str | None = None
 
@@ -110,11 +140,37 @@ class PositionSummary(BaseModel):
     asset: str = ""
     conditionId: str = ""
     size: float = 0.0
+    avgPrice: float = 0.0
     currentValue: float = 0.0
     cashPnl: float = 0.0
     percentPnl: float = 0.0
     curPrice: float = 0.0
+    redeemable: bool = False
     title: str = ""
     outcome: str = ""
     icon: str = ""
     slug: str = ""
+
+
+# ── Builder attribution ─────────────────────────────────
+
+
+class BuilderTrade(BaseModel):
+    id: str = ""
+    market: str = ""
+    asset_id: str = ""
+    side: str = ""
+    size: str = ""
+    price: str = ""
+    status: str = ""
+    outcome: str = ""
+    owner: str = ""
+    transaction_hash: str = ""
+    match_time: str = ""
+    fee_rate_bps: str = ""
+
+
+class BuilderTradesResponse(BaseModel):
+    trades: list[BuilderTrade]
+    count: int
+    next_cursor: str | None = None
