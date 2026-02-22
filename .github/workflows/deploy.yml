@@ -55,14 +55,7 @@ jobs:
                 \"ImageIdentifier\": \"$IMAGE\",
                 \"ImageRepositoryType\": \"ECR\",
                 \"ImageConfiguration\": {
-                  \"Port\": \"8000\",
-                  \"RuntimeEnvironmentSecrets\": {
-                    \"POLYMARKET_BUILDER_API_KEY\": \"${{ secrets.POLYMARKET_BUILDER_API_KEY_ARN }}\",
-                    \"POLYMARKET_BUILDER_SECRET\": \"${{ secrets.POLYMARKET_BUILDER_SECRET_ARN }}\",
-                    \"POLYMARKET_BUILDER_PASSPHRASE\": \"${{ secrets.POLYMARKET_BUILDER_PASSPHRASE_ARN }}\",
-                    \"DATABASE_URL\": \"${{ secrets.DATABASE_URL_ARN }}\",
-                    \"REDIS_URL\": \"${{ secrets.REDIS_URL_ARN }}\"
-                  }
+                  \"Port\": \"8000\"
                 }
               },
               \"AutoDeploymentsEnabled\": false,
