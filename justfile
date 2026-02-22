@@ -25,6 +25,25 @@ setup-frontend:
     cd frontend && bun install
     @echo "✅ Frontend dependencies installed"
 
+# ── Infrastructure ──────────────────────────────────────
+
+# Start Postgres + Redis for local development
+infra:
+    docker compose up -d
+    @echo "✅ Postgres (5432) + Redis (6379) running"
+
+# Stop local infrastructure
+infra-down:
+    docker compose down
+
+# Run Alembic migration (auto-generate)
+db-migrate message="auto":
+    cd backend && uv run alembic revision --autogenerate -m "{{message}}"
+
+# Apply Alembic migrations
+db-upgrade:
+    cd backend && uv run alembic upgrade head
+
 # ── Development ──────────────────────────────────────────
 
 # Run both backend and frontend in parallel

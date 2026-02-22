@@ -17,12 +17,14 @@ export function WalletInfo() {
   const { data: maticBalance } = useBalance({
     address: eoaAddress,
     chainId: polygon.id,
+    query: { enabled: !!eoaAddress },
   });
 
   const { data: usdcBalance } = useBalance({
     address: eoaAddress,
     chainId: polygon.id,
     token: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+    query: { enabled: !!eoaAddress },
   });
 
   if (!isConnected || !eoaAddress) return null;

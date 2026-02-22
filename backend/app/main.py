@@ -24,6 +24,38 @@ FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "di
 async def lifespan(app: FastAPI):
     setup_logging()
     logger.info("polyscoop starting up")
+
+    # Initialize database tables
+    from app.db.engine import engine
+    from app.db.models import Base
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    logger.info("database tables ready")
+
+    # Initialize Redis
+    import redis.asyncio as aioredis
+
+    from app.core.config import settings as cfg
+
+    app.state.redis = aioredis.from_url(cfg.REDIS_URL, decode_responses=True)
+    try:
+        await app.state.redis.ping()  # type: ignore[reportGeneralTypeIssues]
+        logger.info("redis connected")
+    except Exception:
+        logger.warning("redis not available — live features disabled")
+        app.state.redis = None
+
+    # Start background workers
+    from app.workers.manager import start_workers, stop_workers
+
+    await start_workers()
+
+    # Initialize shared httpx client
+    from app.services.polymarket import get_client
+
+    get_client()
+
     if FRONTEND_DIST.exists():
         logger.info("serving frontend from %s", FRONTEND_DIST)
     else:
@@ -32,7 +64,19 @@ async def lifespan(app: FastAPI):
             FRONTEND_DIST,
         )
     yield
+
+    # Shutdown
     logger.info("polyscoop shutting down")
+    await stop_workers()
+
+    from app.services.polymarket import close_client
+
+    await close_client()
+
+    if app.state.redis:
+        await app.state.redis.aclose()
+
+    await engine.dispose()
 
 
 app = FastAPI(
@@ -49,7 +93,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
     expose_headers=["X-Request-ID", "X-Response-Time"],
 )

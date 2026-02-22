@@ -13,4 +13,5 @@ export const config = getDefaultConfig({
   transports: {
     [polygon.id]: http(rpcUrl),
   },
+  pollingInterval: 30_000,
 });
