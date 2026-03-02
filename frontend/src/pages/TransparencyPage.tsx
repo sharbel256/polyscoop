@@ -29,7 +29,7 @@ const HOW_IT_WORKS = [
     title: "open source",
     description:
       "the entire codebase is open source. inspect the code, verify the claims, and contribute.",
-    link: "https://github.com/sharbel/polyscoop",
+    link: "https://github.com/sharbel256/polyscoop",
     linkLabel: "view on github",
   },
   {
