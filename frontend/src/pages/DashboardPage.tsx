@@ -7,6 +7,7 @@ import { fetchFeedTrades } from "@/lib/api";
 import { WalletInfo } from "@/components/WalletInfo";
 import { SessionPanel } from "@/components/SessionPanel";
 import { formatUsd, formatCompact, shortenAddress, cn } from "@/lib/utils";
+import { WalletAvatar } from "@/components/WalletAvatar";
 import {
   Telescope,
   Users,
@@ -170,9 +171,25 @@ export function DashboardPage() {
                         <td className="px-4 py-2">
                           <Link
                             to={`/wallet/${w.address}`}
-                            className="font-mono text-brand-400 hover:text-brand-300"
+                            className="flex items-center gap-2 hover:opacity-80"
                           >
-                            {shortenAddress(w.address)}
+                            <WalletAvatar
+                              address={w.address}
+                              imageUrl={w.profile_image_url}
+                              size="sm"
+                            />
+                            <div className="min-w-0">
+                              {w.display_name && (
+                                <span className="truncate text-gray-200">
+                                  {w.display_name.toLowerCase()}
+                                </span>
+                              )}
+                              {!w.display_name && (
+                                <span className="font-mono text-brand-400">
+                                  {shortenAddress(w.address)}
+                                </span>
+                              )}
+                            </div>
                           </Link>
                         </td>
                         <td className="px-4 py-2 text-right font-mono text-gray-300">
@@ -234,14 +251,32 @@ export function DashboardPage() {
                         >
                           {isBuy ? "buy" : "sell"}
                         </span>
-                        <p className="min-w-0 flex-1 truncate text-gray-300">
-                          {t.title}
-                        </p>
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          {t.market_image && (
+                            <img
+                              src={t.market_image}
+                              alt=""
+                              className="h-5 w-5 shrink-0 rounded object-cover"
+                            />
+                          )}
+                          <p className="min-w-0 truncate text-gray-300">
+                            {t.title}
+                          </p>
+                        </div>
                         <Link
                           to={`/wallet/${t.wallet}`}
-                          className="shrink-0 font-mono text-brand-400 hover:text-brand-300"
+                          className="flex shrink-0 items-center gap-1.5 hover:opacity-80"
                         >
-                          {shortenAddress(t.wallet)}
+                          <WalletAvatar
+                            address={t.wallet}
+                            imageUrl={t.profile_image_url}
+                            size="sm"
+                          />
+                          <span className="font-mono text-brand-400">
+                            {t.display_name
+                              ? t.display_name.toLowerCase()
+                              : shortenAddress(t.wallet)}
+                          </span>
                         </Link>
                         <span className="w-16 shrink-0 text-right font-mono text-gray-400">
                           {formatUsd(t.size * t.price)}

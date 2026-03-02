@@ -8,8 +8,9 @@ import {
   useOrderbook,
   usePriceHistory,
 } from "@/hooks/useMarketData";
-import type { Position, WalletTrade } from "@/lib/api";
+import type { Position, WalletTrade, TraderProfileData } from "@/lib/api";
 import { cn, formatUsd, shortenAddress, formatCompact } from "@/lib/utils";
+import { WalletAvatar } from "@/components/WalletAvatar";
 import {
   Loader2,
   Search,
@@ -25,6 +26,10 @@ import {
   ChevronUp,
   ChevronsUpDown,
   ArrowUpRight,
+  Bot,
+  Clock,
+  Target,
+  Layers,
 } from "lucide-react";
 
 type Tab = "positions" | "trades";
@@ -306,9 +311,27 @@ export function WalletPage() {
           <div>
             <p className="text-xs text-gray-500">wallet inspector</p>
             <div className="mt-1 flex items-center gap-2">
-              <h1 className="font-mono text-lg font-bold text-white">
-                {address ? shortenAddress(address, 6) : "—"}
-              </h1>
+              {address && (
+                <WalletAvatar
+                  address={address}
+                  imageUrl={profile?.profile_image_url}
+                  size="md"
+                />
+              )}
+              <div>
+                <h1 className={profile?.display_name ? "text-lg font-bold text-white" : "font-mono text-lg font-bold text-white"}>
+                  {profile?.display_name
+                    ? profile.display_name.toLowerCase()
+                    : address
+                      ? shortenAddress(address, 6)
+                      : "—"}
+                </h1>
+                {profile?.display_name && address && (
+                  <p className="font-mono text-xs text-gray-500">
+                    {shortenAddress(address, 6)}
+                  </p>
+                )}
+              </div>
               {address && (
                 <>
                   <button
@@ -396,6 +419,14 @@ export function WalletPage() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Trader Analytics */}
+      {!profileLoading && profile?.trader_profile && (
+        <TraderAnalyticsCard
+          tp={profile.trader_profile}
+          score7d={score7d}
+        />
       )}
 
       {/* Copy wallet button */}
@@ -659,6 +690,156 @@ export function WalletPage() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Trader analytics card ─────────────────────────────────── */
+
+function TraderAnalyticsCard({
+  tp,
+  score7d,
+}: {
+  tp: TraderProfileData;
+  score7d?: { roi: number; consistency: number } | null;
+}) {
+  const botColor =
+    tp.bot_score < 0.3
+      ? "text-emerald-400"
+      : tp.bot_score < 0.6
+        ? "text-yellow-400"
+        : "text-red-400";
+
+  const botLabel =
+    tp.bot_score < 0.3
+      ? "likely human"
+      : tp.bot_score < 0.6
+        ? "uncertain"
+        : "likely bot";
+
+  const timingLabel =
+    tp.avg_entry_timing < 0.33
+      ? "early"
+      : tp.avg_entry_timing < 0.66
+        ? "mid"
+        : "late";
+
+  return (
+    <div className="card space-y-4">
+      <h2 className="flex items-center gap-2 text-sm font-bold text-white">
+        <Target className="h-4 w-4 text-brand-500" />
+        trader analytics
+      </h2>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {/* Bot score */}
+        <div className="rounded-lg bg-surface-dark-2 p-3">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <Bot className="h-3 w-3" />
+            bot score
+          </div>
+          <p className={cn("mt-1 font-mono text-lg font-bold", botColor)}>
+            {(tp.bot_score * 100).toFixed(0)}%
+          </p>
+          <p className={cn("text-xs", botColor)}>{botLabel}</p>
+        </div>
+
+        {/* Active hours */}
+        <div className="rounded-lg bg-surface-dark-2 p-3">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <Clock className="h-3 w-3" />
+            active hours
+          </div>
+          <p className="mt-1 font-mono text-lg font-bold text-white">
+            {tp.active_hours}/24
+          </p>
+        </div>
+
+        {/* Primary category */}
+        <div className="rounded-lg bg-surface-dark-2 p-3">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <Layers className="h-3 w-3" />
+            primary category
+          </div>
+          <p className="mt-1 text-sm font-bold text-white">
+            {tp.primary_category || "—"}
+          </p>
+          <p className="text-xs text-gray-500">
+            {(tp.category_concentration * 100).toFixed(0)}% concentrated
+          </p>
+        </div>
+
+        {/* Markets traded */}
+        <div className="rounded-lg bg-surface-dark-2 p-3">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <BarChart3 className="h-3 w-3" />
+            markets traded
+          </div>
+          <p className="mt-1 font-mono text-lg font-bold text-white">
+            {tp.market_count}
+          </p>
+        </div>
+
+        {/* Entry timing */}
+        <div className="rounded-lg bg-surface-dark-2 p-3">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <TrendingUp className="h-3 w-3" />
+            avg entry timing
+          </div>
+          <p className="mt-1 font-mono text-lg font-bold text-white">
+            {timingLabel}
+          </p>
+          <p className="text-xs text-gray-500">
+            {(tp.avg_entry_timing * 100).toFixed(0)}% into lifecycle
+          </p>
+        </div>
+
+        {/* Hold duration */}
+        <div className="rounded-lg bg-surface-dark-2 p-3">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <Clock className="h-3 w-3" />
+            avg hold duration
+          </div>
+          <p className="mt-1 font-mono text-lg font-bold text-white">
+            {tp.avg_hold_duration_h < 24
+              ? `${tp.avg_hold_duration_h.toFixed(1)}h`
+              : `${(tp.avg_hold_duration_h / 24).toFixed(1)}d`}
+          </p>
+        </div>
+
+        {/* Avg position size */}
+        <div className="rounded-lg bg-surface-dark-2 p-3">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <Activity className="h-3 w-3" />
+            avg position size
+          </div>
+          <p className="mt-1 font-mono text-lg font-bold text-white">
+            {formatUsd(tp.avg_position_size_usd)}
+          </p>
+        </div>
+
+        {/* ROI from 7d scores */}
+        {score7d && (
+          <div className="rounded-lg bg-surface-dark-2 p-3">
+            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+              <TrendingUp className="h-3 w-3" />
+              7d roi / consistency
+            </div>
+            <p
+              className={cn(
+                "mt-1 font-mono text-lg font-bold",
+                score7d.roi >= 0 ? "text-emerald-400" : "text-red-400",
+              )}
+            >
+              {score7d.roi >= 0 ? "+" : ""}
+              {(score7d.roi * 100).toFixed(1)}%
+            </p>
+            <p className="text-xs text-gray-500">
+              consistency: {score7d.consistency.toFixed(2)}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

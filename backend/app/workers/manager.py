@@ -3,7 +3,7 @@
 import asyncio
 import logging
 
-from app.workers import market_discovery, trade_listener, trade_poller, wallet_scorer
+from app.workers import market_discovery, profile_image_fetcher, profile_scorer, trade_listener, trade_poller, wallet_scorer
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +17,8 @@ async def start_workers() -> None:
     _tasks.append(asyncio.create_task(trade_poller.run_forever(), name="trade_poller"))
     _tasks.append(asyncio.create_task(wallet_scorer.run_forever(), name="wallet_scorer"))
     _tasks.append(asyncio.create_task(trade_listener.run_forever(), name="trade_listener"))
+    _tasks.append(asyncio.create_task(profile_scorer.run_forever(), name="profile_scorer"))
+    _tasks.append(asyncio.create_task(profile_image_fetcher.run_forever(), name="profile_image_fetcher"))
     logger.info("started %d workers", len(_tasks))
 
 

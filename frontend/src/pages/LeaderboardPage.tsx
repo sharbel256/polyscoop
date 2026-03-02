@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import type { LeaderboardFilters } from "@/lib/api";
 import { cn, formatUsd, formatCompact, shortenAddress } from "@/lib/utils";
+import { WalletAvatar } from "@/components/WalletAvatar";
 import {
   Loader2,
   Trophy,
@@ -30,6 +31,8 @@ const SORTABLE_COLUMNS = [
   { key: "trade_count", label: "trades", align: "right" as const },
   { key: "pnl", label: "pnl", align: "right" as const },
   { key: "win_rate", label: "win rate", align: "right" as const },
+  { key: "roi", label: "roi", align: "right" as const },
+  { key: "consistency", label: "consistency", align: "right" as const },
 ] as const;
 
 type SortDir = "asc" | "desc" | null;
@@ -54,6 +57,12 @@ export function LeaderboardPage() {
   const [marketFilter, setMarketFilter] = useState("");
   const [eventFilter, setEventFilter] = useState("");
 
+  // New analytics filters
+  const [maxBotScore, setMaxBotScore] = useState("");
+  const [minRoi, setMinRoi] = useState("");
+  const [minConsistency, setMinConsistency] = useState("");
+  const [primaryCategory, setPrimaryCategory] = useState("");
+
   // Date range — either relative preset or custom from/to
   const [dateMode, setDateMode] = useState<"preset" | "custom">("preset");
   const [relativeRange, setRelativeRange] = useState<number | null>(null);
@@ -69,6 +78,11 @@ export function LeaderboardPage() {
   if (labelFilter.trim()) filters.label = labelFilter.trim();
   if (marketFilter.trim()) filters.market = marketFilter.trim();
   if (eventFilter.trim()) filters.event_id = eventFilter.trim();
+
+  if (maxBotScore) filters.max_bot_score = Number(maxBotScore);
+  if (minRoi) filters.min_roi = Number(minRoi);
+  if (minConsistency) filters.min_consistency = Number(minConsistency);
+  if (primaryCategory.trim()) filters.primary_category = primaryCategory.trim();
 
   if (dateMode === "preset" && relativeRange != null) {
     filters.from_ts = Math.floor(Date.now() / 1000) - relativeRange;
@@ -123,6 +137,10 @@ export function LeaderboardPage() {
     setLabelFilter("");
     setMarketFilter("");
     setEventFilter("");
+    setMaxBotScore("");
+    setMinRoi("");
+    setMinConsistency("");
+    setPrimaryCategory("");
     setDateMode("preset");
     setRelativeRange(null);
     setFromDate("");
@@ -283,6 +301,79 @@ export function LeaderboardPage() {
                   />
                   profitable only
                 </label>
+              </div>
+
+              {/* Max bot score */}
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">
+                  max bot score (0-1)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={1}
+                  step={0.1}
+                  value={maxBotScore}
+                  onChange={(e) => {
+                    setMaxBotScore(e.target.value);
+                    setPage(0);
+                  }}
+                  placeholder="e.g. 0.5"
+                  className="input w-full"
+                />
+              </div>
+
+              {/* Min ROI */}
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">
+                  min roi
+                </label>
+                <input
+                  type="number"
+                  step={0.01}
+                  value={minRoi}
+                  onChange={(e) => {
+                    setMinRoi(e.target.value);
+                    setPage(0);
+                  }}
+                  placeholder="e.g. 0.1"
+                  className="input w-full"
+                />
+              </div>
+
+              {/* Min consistency */}
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">
+                  min consistency
+                </label>
+                <input
+                  type="number"
+                  step={0.1}
+                  value={minConsistency}
+                  onChange={(e) => {
+                    setMinConsistency(e.target.value);
+                    setPage(0);
+                  }}
+                  placeholder="e.g. 0.5"
+                  className="input w-full"
+                />
+              </div>
+
+              {/* Primary category */}
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">
+                  primary category
+                </label>
+                <input
+                  type="text"
+                  value={primaryCategory}
+                  onChange={(e) => {
+                    setPrimaryCategory(e.target.value);
+                    setPage(0);
+                  }}
+                  placeholder="e.g. mentions"
+                  className="input w-full"
+                />
               </div>
 
               {/* Label */}
@@ -493,9 +584,25 @@ export function LeaderboardPage() {
                       <td className="px-4 py-3">
                         <Link
                           to={`/wallet/${w.address}`}
-                          className="font-mono text-brand-400 hover:text-brand-300"
+                          className="flex items-center gap-2 hover:opacity-80"
                         >
-                          {shortenAddress(w.address, 6)}
+                          <WalletAvatar
+                            address={w.address}
+                            imageUrl={w.profile_image_url}
+                            size="sm"
+                          />
+                          <div className="min-w-0">
+                            <p className={w.display_name ? "truncate text-sm text-gray-200" : "font-mono text-sm text-brand-400"}>
+                              {w.display_name
+                                ? w.display_name.toLowerCase()
+                                : shortenAddress(w.address, 6)}
+                            </p>
+                            {w.display_name && (
+                              <p className="font-mono text-xs text-gray-600">
+                                {shortenAddress(w.address, 4)}
+                              </p>
+                            )}
+                          </div>
                         </Link>
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-gray-300">
@@ -515,6 +622,18 @@ export function LeaderboardPage() {
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-gray-300">
                         {(w.win_rate * 100).toFixed(1)}%
+                      </td>
+                      <td
+                        className={cn(
+                          "px-4 py-3 text-right font-mono",
+                          w.roi >= 0 ? "text-emerald-400" : "text-red-400",
+                        )}
+                      >
+                        {w.roi >= 0 ? "+" : ""}
+                        {(w.roi * 100).toFixed(1)}%
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono text-gray-300">
+                        {w.consistency.toFixed(2)}
                       </td>
                     </tr>
                   ))}

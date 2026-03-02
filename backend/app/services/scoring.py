@@ -1,6 +1,8 @@
 """Wallet scoring algorithms — aggregates trade data into wallet rankings."""
 
 import logging
+import statistics
+from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import case, delete, func, select
@@ -64,14 +66,31 @@ async def compute_scores(session: AsyncSession) -> int:
         )
         pnl_rows = (await session.execute(pnl_q)).all()
 
-        # Aggregate PnL and win rate per wallet
+        # Buy volume per wallet (for ROI)
+        buy_vol_q = (
+            select(
+                Trade.wallet,
+                func.sum(Trade.size * Trade.price).label("buy_volume"),
+            )
+            .where(*time_filter, Trade.side == "BUY")
+            .group_by(Trade.wallet)
+        )
+        buy_vol_rows = {
+            r.wallet: float(r.buy_volume or 0)
+            for r in (await session.execute(buy_vol_q)).all()
+        }
+
+        # Aggregate PnL and win rate per wallet + collect per-market returns
         wallet_pnl: dict[str, float] = {}
         wallet_wins: dict[str, int] = {}
         wallet_markets: dict[str, int] = {}
+        wallet_market_returns: dict[str, list[float]] = defaultdict(list)
         for r in pnl_rows:
-            wallet_pnl[r.wallet] = wallet_pnl.get(r.wallet, 0.0) + (r.market_pnl or 0.0)
+            mpnl = float(r.market_pnl or 0.0)
+            wallet_pnl[r.wallet] = wallet_pnl.get(r.wallet, 0.0) + mpnl
             wallet_markets[r.wallet] = wallet_markets.get(r.wallet, 0) + 1
-            if (r.market_pnl or 0.0) > 0:
+            wallet_market_returns[r.wallet].append(mpnl)
+            if mpnl > 0:
                 wallet_wins[r.wallet] = wallet_wins.get(r.wallet, 0) + 1
 
         # Build score dicts
@@ -82,6 +101,19 @@ async def compute_scores(session: AsyncSession) -> int:
         for w in wallet_list:
             mc = wallet_markets.get(w, 0)
             wallet_wr[w] = wallet_wins.get(w, 0) / mc if mc > 0 else 0.0
+
+        # ROI and consistency per wallet
+        wallet_roi: dict[str, float] = {}
+        wallet_consistency: dict[str, float] = {}
+        for w in wallet_list:
+            bv = buy_vol_rows.get(w, 0.0)
+            wallet_roi[w] = wallet_pnl.get(w, 0.0) / bv if bv > 0 else 0.0
+            returns = wallet_market_returns.get(w, [])
+            if len(returns) >= 2:
+                sd = statistics.stdev(returns)
+                wallet_consistency[w] = statistics.mean(returns) / sd if sd > 0 else 0.0
+            else:
+                wallet_consistency[w] = 0.0
 
         # Sort for rankings
         by_volume = sorted(wallet_list, key=lambda w: vol_rows[w].volume or 0, reverse=True)
@@ -106,6 +138,8 @@ async def compute_scores(session: AsyncSession) -> int:
                     "rank_volume": rank_vol[w],
                     "rank_pnl": rank_pnl[w],
                     "rank_win_rate": rank_wr[w],
+                    "roi": round(wallet_roi[w], 6),
+                    "consistency": round(wallet_consistency[w], 6),
                 }
             )
 
@@ -119,7 +153,7 @@ async def compute_scores(session: AsyncSession) -> int:
                 )
             )
 
-            batch_size = 3000  # 10 cols per row → 30k params per batch
+            batch_size = 2500  # 12 cols per row → ~30k params per batch
             for i in range(0, len(scores), batch_size):
                 batch = scores[i : i + batch_size]
                 stmt = pg_insert(WalletScore).values(batch)
@@ -133,6 +167,8 @@ async def compute_scores(session: AsyncSession) -> int:
                         "rank_volume": stmt.excluded.rank_volume,
                         "rank_pnl": stmt.excluded.rank_pnl,
                         "rank_win_rate": stmt.excluded.rank_win_rate,
+                        "roi": stmt.excluded.roi,
+                        "consistency": stmt.excluded.consistency,
                     },
                 )
                 await session.execute(stmt)
@@ -182,13 +218,30 @@ async def compute_scores(session: AsyncSession) -> int:
             )
             pnl_rows = (await session.execute(pnl_q)).all()
 
+            # Buy volume per wallet (for ROI)
+            buy_vol_q = (
+                select(
+                    Trade.wallet,
+                    func.sum(Trade.size * Trade.price).label("buy_volume"),
+                )
+                .where(*time_filter, Trade.side == "BUY")
+                .group_by(Trade.wallet)
+            )
+            buy_vol_rows = {
+                r.wallet: float(r.buy_volume or 0)
+                for r in (await session.execute(buy_vol_q)).all()
+            }
+
             wallet_pnl: dict[str, float] = {}
             wallet_wins: dict[str, int] = {}
             wallet_markets: dict[str, int] = {}
+            wallet_market_returns: dict[str, list[float]] = defaultdict(list)
             for r in pnl_rows:
-                wallet_pnl[r.wallet] = wallet_pnl.get(r.wallet, 0.0) + (r.market_pnl or 0.0)
+                mpnl = float(r.market_pnl or 0.0)
+                wallet_pnl[r.wallet] = wallet_pnl.get(r.wallet, 0.0) + mpnl
                 wallet_markets[r.wallet] = wallet_markets.get(r.wallet, 0) + 1
-                if (r.market_pnl or 0.0) > 0:
+                wallet_market_returns[r.wallet].append(mpnl)
+                if mpnl > 0:
                     wallet_wins[r.wallet] = wallet_wins.get(r.wallet, 0) + 1
 
             wallet_list = list(vol_rows.keys())
@@ -197,6 +250,19 @@ async def compute_scores(session: AsyncSession) -> int:
             for w in wallet_list:
                 mc = wallet_markets.get(w, 0)
                 wallet_wr[w] = wallet_wins.get(w, 0) / mc if mc > 0 else 0.0
+
+            # ROI and consistency per wallet
+            wallet_roi: dict[str, float] = {}
+            wallet_consistency: dict[str, float] = {}
+            for w in wallet_list:
+                bv = buy_vol_rows.get(w, 0.0)
+                wallet_roi[w] = wallet_pnl.get(w, 0.0) / bv if bv > 0 else 0.0
+                returns = wallet_market_returns.get(w, [])
+                if len(returns) >= 2:
+                    sd = statistics.stdev(returns)
+                    wallet_consistency[w] = statistics.mean(returns) / sd if sd > 0 else 0.0
+                else:
+                    wallet_consistency[w] = 0.0
 
             by_volume = sorted(wallet_list, key=lambda w: vol_rows[w].volume or 0, reverse=True)
             by_pnl = sorted(wallet_list, key=lambda w: wallet_pnl.get(w, 0.0), reverse=True)
@@ -220,6 +286,8 @@ async def compute_scores(session: AsyncSession) -> int:
                         "rank_volume": rank_vol[w],
                         "rank_pnl": rank_pnl[w],
                         "rank_win_rate": rank_wr[w],
+                        "roi": round(wallet_roi[w], 6),
+                        "consistency": round(wallet_consistency[w], 6),
                     }
                 )
 
@@ -231,7 +299,7 @@ async def compute_scores(session: AsyncSession) -> int:
                     )
                 )
 
-                batch_size = 3000
+                batch_size = 2500
                 for i in range(0, len(scores), batch_size):
                     batch = scores[i : i + batch_size]
                     stmt = pg_insert(WalletScore).values(batch)
@@ -245,6 +313,8 @@ async def compute_scores(session: AsyncSession) -> int:
                             "rank_volume": stmt.excluded.rank_volume,
                             "rank_pnl": stmt.excluded.rank_pnl,
                             "rank_win_rate": stmt.excluded.rank_win_rate,
+                            "roi": stmt.excluded.roi,
+                            "consistency": stmt.excluded.consistency,
                         },
                     )
                     await session.execute(stmt)

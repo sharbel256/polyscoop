@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useLiveTrades } from "@/hooks/useLiveTrades";
 import { fetchFeedTrades, type FeedTrade } from "@/lib/api";
 import { cn, formatUsd, shortenAddress } from "@/lib/utils";
+import { WalletAvatar } from "@/components/WalletAvatar";
 import { Activity, Loader2, Wifi, WifiOff } from "lucide-react";
 
 const WHALE_THRESHOLD = 500; // USD value
@@ -115,23 +116,41 @@ export function LiveFeedPage() {
                   </span>
 
                   {/* Market */}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-gray-300">
-                      {trade.title || trade.condition_id.slice(0, 16) + "..."}
-                    </p>
-                    {trade.outcome && (
-                      <span className="text-xs text-gray-600">
-                        {trade.outcome.toLowerCase()}
-                      </span>
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    {trade.market_image && (
+                      <img
+                        src={trade.market_image}
+                        alt=""
+                        className="h-6 w-6 shrink-0 rounded object-cover"
+                      />
                     )}
+                    <div className="min-w-0">
+                      <p className="truncate text-sm text-gray-300">
+                        {trade.title || trade.condition_id.slice(0, 16) + "..."}
+                      </p>
+                      {trade.outcome && (
+                        <span className="text-xs text-gray-600">
+                          {trade.outcome.toLowerCase()}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Wallet */}
                   <Link
                     to={`/wallet/${trade.wallet}`}
-                    className="shrink-0 font-mono text-xs text-brand-400 hover:text-brand-300"
+                    className="flex shrink-0 items-center gap-1.5 hover:opacity-80"
                   >
-                    {shortenAddress(trade.wallet)}
+                    <WalletAvatar
+                      address={trade.wallet}
+                      imageUrl={trade.profile_image_url}
+                      size="sm"
+                    />
+                    <span className="font-mono text-xs text-brand-400">
+                      {trade.display_name
+                        ? trade.display_name.toLowerCase()
+                        : shortenAddress(trade.wallet)}
+                    </span>
                   </Link>
 
                   {/* Size / Value */}
