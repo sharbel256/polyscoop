@@ -32,18 +32,18 @@ export function WalletInfo() {
   return (
     <div className="card">
       <div className="flex items-center gap-2.5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-700/20">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500/20 to-accent-purple/20">
           <Wallet className="h-5 w-5 text-brand-400" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-gray-200">
+          <p className="text-sm font-semibold text-foreground-secondary">
             {shortenAddress(eoaAddress)}
           </p>
           <a
             href={`https://polygonscan.com/address/${eoaAddress}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs text-gray-500 hover:text-brand-400"
+            className="flex items-center gap-1 text-xs text-foreground-muted hover:text-brand-400"
           >
             view on polygonscan
             <ExternalLink className="h-3 w-3" />
@@ -53,15 +53,15 @@ export function WalletInfo() {
 
       {safeAddress && (
         <div className="mt-4 space-y-2">
-          <div className="flex items-center justify-between rounded-lg bg-surface-dark-2 px-3 py-2">
-            <span className="text-xs text-gray-500">cash balance</span>
-            <span className="font-mono text-sm font-medium text-green-400">
+          <div className="flex items-center justify-between rounded-lg bg-surface-elevated/40 px-3 py-2">
+            <span className="text-xs text-foreground-muted">cash balance</span>
+            <span className="font-mono text-sm font-medium text-gain">
               ${formattedCashBalance}
             </span>
           </div>
-          <div className="flex items-center justify-between rounded-lg bg-surface-dark-2 px-3 py-2">
-            <span className="text-xs text-gray-500">portfolio value</span>
-            <span className="font-mono text-sm font-medium text-green-400">
+          <div className="flex items-center justify-between rounded-lg bg-surface-elevated/40 px-3 py-2">
+            <span className="text-xs text-foreground-muted">portfolio value</span>
+            <span className="font-mono text-sm font-medium text-gain">
               $
               {(totalPositionsValue + parseFloat(formattedCashBalance)).toFixed(
                 2,
@@ -72,15 +72,15 @@ export function WalletInfo() {
       )}
 
       <div className="mt-4 space-y-2">
-        <div className="flex items-center justify-between rounded-lg bg-surface-dark-2 px-3 py-2">
-          <span className="text-xs text-gray-500">matic</span>
-          <span className="font-mono text-sm font-medium text-gray-200">
+        <div className="flex items-center justify-between rounded-lg bg-surface-elevated/40 px-3 py-2">
+          <span className="text-xs text-foreground-muted">matic</span>
+          <span className="font-mono text-sm font-medium text-foreground-secondary">
             {maticBalance ? parseFloat(maticBalance.formatted).toFixed(4) : "–"}
           </span>
         </div>
-        <div className="flex items-center justify-between rounded-lg bg-surface-dark-2 px-3 py-2">
-          <span className="text-xs text-gray-500">usdc.e</span>
-          <span className="font-mono text-sm font-medium text-gray-200">
+        <div className="flex items-center justify-between rounded-lg bg-surface-elevated/40 px-3 py-2">
+          <span className="text-xs text-foreground-muted">usdc.e</span>
+          <span className="font-mono text-sm font-medium text-foreground-secondary">
             {usdcBalance ? parseFloat(usdcBalance.formatted).toFixed(2) : "–"}
           </span>
         </div>

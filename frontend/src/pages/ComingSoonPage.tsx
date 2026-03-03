@@ -1,29 +1,52 @@
+import { motion } from "framer-motion";
 import { Telescope, Fish, Eye, ArrowLeftRight } from "lucide-react";
+import { GradientBackground } from "@/components/ui";
+import { staggerContainer, staggerItem } from "@/lib/motion";
 
 export function ComingSoonPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-surface-dark-0">
-      <div className="flex flex-1 flex-col items-center justify-center px-4 py-24">
+    <div className="relative flex min-h-screen flex-col bg-surface">
+      {/* Fullscreen gradient background */}
+      <GradientBackground variant="fullscreen" />
+
+      <motion.div
+        variants={staggerContainer}
+        initial="hidden"
+        animate="visible"
+        className="relative flex flex-1 flex-col items-center justify-center px-4 py-24"
+      >
         {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-700">
+        <motion.div
+          variants={staggerItem}
+          className="flex items-center gap-3"
+        >
+          <div className="glow-brand flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700">
             <Telescope className="h-7 w-7 text-white" />
           </div>
-          <span className="text-2xl font-bold tracking-tight text-white">
+          <span className="text-2xl font-bold tracking-tight text-foreground">
             polyscoop
           </span>
-        </div>
+        </motion.div>
 
         {/* Tagline */}
-        <h1 className="mt-8 max-w-lg text-center text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
+        <motion.h1
+          variants={staggerItem}
+          className="mt-8 max-w-lg text-center text-display gradient-text"
+        >
           market intelligence for prediction markets
-        </h1>
-        <p className="mt-4 max-w-md text-center text-gray-400">
+        </motion.h1>
+        <motion.p
+          variants={staggerItem}
+          className="mt-4 max-w-md text-center text-foreground-secondary"
+        >
           surface anomalies across polymarket — all in real time.
-        </p>
+        </motion.p>
 
         {/* Feature highlights */}
-        <div className="mt-12 grid max-w-lg gap-4 sm:grid-cols-3">
+        <motion.div
+          variants={staggerContainer}
+          className="mt-8 grid max-w-lg gap-3 sm:mt-12 sm:gap-4 sm:grid-cols-3"
+        >
           {[
             {
               icon: Fish,
@@ -41,27 +64,33 @@ export function ComingSoonPage() {
               desc: "spot mispriced opportunities across markets",
             },
           ].map(({ icon: Icon, label, desc }) => (
-            <div
+            <motion.div
               key={label}
-              className="rounded-xl border border-surface-dark-3 bg-surface-dark-1 p-4 text-center"
+              variants={staggerItem}
+              className="card gradient-border text-center"
             >
-              <Icon className="mx-auto h-5 w-5 text-brand-400" />
-              <p className="mt-2 text-sm font-semibold text-gray-200">
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-500/20 to-accent-purple/20">
+                <Icon className="h-5 w-5 text-brand-400" />
+              </div>
+              <p className="mt-2 text-sm font-semibold text-foreground-secondary">
                 {label}
               </p>
-              <p className="mt-1 text-xs text-gray-500">{desc}</p>
-            </div>
+              <p className="mt-1 text-xs text-foreground-muted">{desc}</p>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
 
         {/* Coming soon badge */}
-        <div className="mt-12 rounded-full border border-brand-700/40 bg-brand-900/20 px-5 py-2 text-sm font-medium text-brand-400">
+        <motion.div
+          variants={staggerItem}
+          className="mt-12 rounded-full border border-brand-500/30 bg-brand-900/20 px-5 py-2 text-sm font-medium text-brand-400 animate-pulse-glow gradient-border"
+        >
           coming soon
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Minimal footer */}
-      <footer className="border-t border-surface-dark-3 py-6 text-center text-xs text-gray-600">
+      <footer className="relative border-t border-white/[0.06] py-6 text-center text-xs text-foreground-muted">
         polyscoop — powered by polymarket
       </footer>
     </div>

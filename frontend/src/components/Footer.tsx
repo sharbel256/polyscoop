@@ -7,9 +7,9 @@ import {
   Mail,
   MessageSquare,
   Shield,
-  Loader2,
   Check,
 } from "lucide-react";
+import { Spinner } from "@/components/ui";
 
 function SignupForm() {
   const [email, setEmail] = useState("");
@@ -44,7 +44,7 @@ function SignupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-center gap-2">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <input
         type="email"
         placeholder="your email"
@@ -54,7 +54,7 @@ function SignupForm() {
           if (status === "error") setStatus("idle");
         }}
         required
-        className="input h-8 w-48 text-xs"
+        className="input h-8 w-full text-xs sm:w-48"
       />
       <button
         type="submit"
@@ -62,7 +62,7 @@ function SignupForm() {
         className="btn-secondary inline-flex items-center gap-1.5 text-xs"
       >
         {status === "loading" ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          <Spinner size="sm" />
         ) : (
           <Mail className="h-3.5 w-3.5" />
         )}
@@ -77,16 +77,19 @@ function SignupForm() {
 
 export function Footer() {
   return (
-    <footer className="border-t border-surface-dark-3 bg-surface-dark-0">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <footer className="bg-surface/40 backdrop-blur-lg pb-20 md:pb-0">
+      {/* Gradient top border */}
+      <div className="h-px bg-gradient-to-r from-transparent via-brand-500/30 to-transparent" />
+
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           {/* Brand + links */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-foreground-muted">
               <Telescope className="h-4 w-4" />
               <span>polyscoop</span>
             </div>
-            <div className="flex items-center gap-4 text-xs text-gray-600">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-foreground-muted">
               <span>powered by polymarket</span>
               <a
                 href="https://github.com/sharbel/polyscoop"

@@ -28,20 +28,22 @@ export function WalletAvatar({
   const sizeClass = SIZE_MAP[size];
   const hex = address.replace("0x", "").slice(0, 2).toLowerCase();
 
+  const ringClass = "ring-2 ring-brand-500/20";
+
   if (imageUrl && !imgError) {
     return (
       <img
         src={imageUrl}
         alt=""
         onError={() => setImgError(true)}
-        className={`${sizeClass} shrink-0 rounded-full object-cover`}
+        className={`${sizeClass} shrink-0 rounded-full object-cover ${ringClass}`}
       />
     );
   }
 
   return (
     <div
-      className={`${sizeClass} flex shrink-0 items-center justify-center rounded-full font-mono font-bold text-white/80`}
+      className={`${sizeClass} flex shrink-0 items-center justify-center rounded-full font-mono font-bold text-white/80 ${ringClass}`}
       style={{ background: gradientFromAddress(address) }}
     >
       {hex}

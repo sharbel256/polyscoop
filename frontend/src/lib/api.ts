@@ -160,6 +160,7 @@ export interface LeaderboardEntry {
   consistency: number;
   profile_image_url: string | null;
   display_name: string | null;
+  last_trade_at: number | null;
 }
 
 export interface LeaderboardResponse {

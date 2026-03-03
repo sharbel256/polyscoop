@@ -1,9 +1,14 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
-import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
+import {
+  RainbowKitProvider,
+  darkTheme,
+  lightTheme,
+} from "@rainbow-me/rainbowkit";
 import "@rainbow-me/rainbowkit/styles.css";
 
 import { config } from "@/config/wagmi";
+import { useTheme } from "./ThemeProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -14,20 +19,22 @@ const queryClient = new QueryClient({
   },
 });
 
+const rkOptions = {
+  accentColor: "#4b6bff",
+  accentColorForeground: "white",
+  borderRadius: "large" as const,
+  fontStack: "system" as const,
+};
+
 export function Web3Provider({ children }: { children: React.ReactNode }) {
+  const { resolvedTheme } = useTheme();
+  const rkTheme =
+    resolvedTheme === "dark" ? darkTheme(rkOptions) : lightTheme(rkOptions);
+
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider
-          theme={darkTheme({
-            accentColor: "#4263eb",
-            accentColorForeground: "white",
-            borderRadius: "large",
-            fontStack: "system",
-          })}
-        >
-          {children}
-        </RainbowKitProvider>
+        <RainbowKitProvider theme={rkTheme}>{children}</RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
