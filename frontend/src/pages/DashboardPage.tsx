@@ -125,7 +125,7 @@ export function DashboardPage() {
             variants={staggerContainer}
             initial="hidden"
             animate="visible"
-            className="space-y-4 sm:space-y-6"
+            className="order-2 space-y-4 sm:space-y-6 lg:order-1"
           >
             {/* Stat cards */}
             <motion.div
@@ -290,8 +290,8 @@ export function DashboardPage() {
             </motion.div>
           </motion.div>
 
-          {/* Sidebar */}
-          <aside className="hidden space-y-4 lg:block">
+          {/* Sidebar — stacks on top on mobile, right column on desktop */}
+          <aside className="order-1 space-y-4 lg:order-2">
             <WalletInfo />
             <SessionPanel />
           </aside>

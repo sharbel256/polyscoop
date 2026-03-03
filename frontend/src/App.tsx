@@ -82,7 +82,7 @@ function AppLayout() {
       </div>
 
       <Header />
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 pb-20 sm:px-6 sm:py-8 md:pb-0 lg:px-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 pb-24 sm:px-6 sm:py-8 md:pb-8 lg:px-8">
         <AnimatedRoutes />
       </main>
       <Footer />

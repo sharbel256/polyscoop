@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useWalletPositions } from "@/hooks/useWalletPositions";
 import { useWalletProfile } from "@/hooks/useWalletProfile";
 import { useWalletTrades } from "@/hooks/useWalletTrades";
-import { Tabs } from "@/components/ui";
+import { Tabs, Skeleton } from "@/components/ui";
 import { WalletHeader } from "@/components/wallet/WalletHeader";
 import { WalletStats } from "@/components/wallet/WalletStats";
 import { TraderAnalytics } from "@/components/wallet/TraderAnalytics";
@@ -62,7 +62,18 @@ export function WalletPage() {
       </motion.div>
 
       {/* Stats */}
-      {!profileLoading && profile && (
+      {profileLoading ? (
+        <motion.div variants={staggerItem}>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="card space-y-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-7 w-24" />
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      ) : profile ? (
         <motion.div variants={staggerItem}>
           <WalletStats
             totalVolume={profile.total_volume}
@@ -71,14 +82,28 @@ export function WalletPage() {
             rank7d={score7d?.rank_volume}
           />
         </motion.div>
-      )}
+      ) : null}
 
       {/* Trader Analytics */}
-      {!profileLoading && profile?.trader_profile && (
+      {profileLoading ? (
+        <motion.div variants={staggerItem}>
+          <div className="card space-y-4">
+            <Skeleton className="h-4 w-32" />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="rounded-lg bg-surface-elevated/40 p-3 space-y-2">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-6 w-20" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      ) : profile?.trader_profile ? (
         <motion.div variants={staggerItem}>
           <TraderAnalytics tp={profile.trader_profile} score7d={score7d} />
         </motion.div>
-      )}
+      ) : null}
 
       {/* Copy wallet button */}
       {address && (

@@ -62,7 +62,7 @@ export function PortfolioPage() {
       className="grid gap-6 lg:grid-cols-[1fr_320px]"
     >
       {/* Main content */}
-      <div className="space-y-6">
+      <div className="order-2 space-y-6 lg:order-1">
         <motion.div variants={staggerItem}>
           <PositionsList
             positions={positions}
@@ -79,8 +79,8 @@ export function PortfolioPage() {
         </motion.div>
       </div>
 
-      {/* Sidebar */}
-      <aside className="hidden space-y-4 lg:block">
+      {/* Sidebar — stacks on top on mobile, right column on desktop */}
+      <aside className="order-1 space-y-4 lg:order-2">
         <WalletInfo />
         <SessionPanel />
       </aside>
