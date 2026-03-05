@@ -20,7 +20,7 @@ async def fetch_missing_profiles(session: AsyncSession) -> int:
 
     Returns the number of wallets processed.
     """
-    cutoff = datetime.now(UTC) - _STALE_AFTER
+    cutoff = datetime.now(UTC).replace(tzinfo=None) - _STALE_AFTER
 
     q = (
         select(Wallet)
@@ -45,7 +45,7 @@ async def fetch_missing_profiles(session: AsyncSession) -> int:
         if profile:
             wallet.profile_image_url = profile["profile_image_url"]
             wallet.display_name = profile["display_name"]
-        wallet.profile_fetched_at = datetime.now(UTC)
+        wallet.profile_fetched_at = datetime.now(UTC).replace(tzinfo=None)
         count += 1
 
     await session.commit()

@@ -59,9 +59,8 @@ def setup_logging() -> None:
     root = logging.getLogger()
     root.setLevel(LOG_LEVEL)
 
-    # Avoid duplicate handlers on reload
-    if root.handlers:
-        return
+    # Clear any handlers set by alembic's fileConfig or previous reloads
+    root.handlers.clear()
 
     correlation_filter = CorrelationIdFilter()
 
