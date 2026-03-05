@@ -1,5 +1,6 @@
 """Remote builder signing endpoint – keeps builder credentials server-side."""
 
+import base64
 import hashlib
 import hmac
 import logging
@@ -22,11 +23,12 @@ def _build_hmac_signature(
     body: str = "",
 ) -> str:
     """Replicate the HMAC-SHA256 signing from @polymarket/builder-signing-sdk."""
-    message = f"{timestamp}{method}{path}{body}"
-    is_hex = all(c in "0123456789abcdef" for c in secret.lower())
-    key = bytes.fromhex(secret) if is_hex else secret.encode()
-    sig = hmac.new(key, message.encode(), hashlib.sha256).hexdigest()
-    return sig
+    message = f"{timestamp}{method}{path}"
+    if body:
+        message += body.replace("'", '"')
+    key = base64.urlsafe_b64decode(secret)
+    sig = hmac.new(key, message.encode(), hashlib.sha256).digest()
+    return base64.urlsafe_b64encode(sig).decode()
 
 
 @router.post("/sign", response_model=SignResponse)

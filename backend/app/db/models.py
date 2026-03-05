@@ -76,6 +76,9 @@ class Wallet(Base):
     total_trades: Mapped[int] = mapped_column(Integer, default=0)
     total_volume: Mapped[float] = mapped_column(Float, default=0.0)
     labels: Mapped[list[str]] = mapped_column(ARRAY(String), default=list)
+    profile_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    display_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    profile_fetched_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class WalletScore(Base):
@@ -93,6 +96,8 @@ class WalletScore(Base):
     rank_volume: Mapped[int] = mapped_column(Integer, default=0)
     rank_pnl: Mapped[int] = mapped_column(Integer, default=0)
     rank_win_rate: Mapped[int] = mapped_column(Integer, default=0)
+    roi: Mapped[float] = mapped_column(Float, default=0.0)
+    consistency: Mapped[float] = mapped_column(Float, default=0.0)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
     )
@@ -111,6 +116,34 @@ class WalletSnapshot(Base):
     size: Mapped[float] = mapped_column(Float, default=0.0)
     pnl: Mapped[float] = mapped_column(Float, default=0.0)
     snapshot_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class TraderProfile(Base):
+    """Per-wallet behavioral metrics: bot detection + specialization."""
+
+    __tablename__ = "trader_profiles"
+
+    wallet: Mapped[str] = mapped_column(String(42), primary_key=True)
+    median_trade_interval_s: Mapped[float] = mapped_column(Float, default=0.0)
+    trade_interval_cv: Mapped[float] = mapped_column(Float, default=0.0)
+    size_cv: Mapped[float] = mapped_column(Float, default=0.0)
+    active_hours: Mapped[int] = mapped_column(Integer, default=0)
+    bot_score: Mapped[float] = mapped_column(Float, default=0.0)
+    primary_category: Mapped[str] = mapped_column(String(64), default="")
+    category_concentration: Mapped[float] = mapped_column(Float, default=0.0)
+    market_count: Mapped[int] = mapped_column(Integer, default=0)
+    avg_entry_timing: Mapped[float] = mapped_column(Float, default=0.0)
+    avg_hold_duration_h: Mapped[float] = mapped_column(Float, default=0.0)
+    avg_position_size_usd: Mapped[float] = mapped_column(Float, default=0.0)
+    easy_win_ratio: Mapped[float] = mapped_column(Float, default=0.0)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (
+        Index("ix_tp_bot_score", "bot_score"),
+        Index("ix_tp_primary_category", "primary_category"),
+    )
 
 
 class CopytradeConfig(Base):

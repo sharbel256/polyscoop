@@ -156,6 +156,11 @@ export interface LeaderboardEntry {
   trade_count: number;
   rank_volume: number;
   rank_pnl: number;
+  roi: number;
+  consistency: number;
+  profile_image_url: string | null;
+  display_name: string | null;
+  last_trade_at: number | null;
 }
 
 export interface LeaderboardResponse {
@@ -174,6 +179,10 @@ export interface LeaderboardFilters {
   event_id?: string;
   from_ts?: number;
   to_ts?: number;
+  max_bot_score?: number;
+  min_roi?: number;
+  min_consistency?: number;
+  primary_category?: string;
 }
 
 export function fetchLeaderboard(
@@ -207,12 +216,39 @@ export function fetchLeaderboard(
     if (filters.event_id) qs.set("event_id", filters.event_id);
     if (filters.from_ts != null) qs.set("from_ts", String(filters.from_ts));
     if (filters.to_ts != null) qs.set("to_ts", String(filters.to_ts));
+    if (filters.max_bot_score != null)
+      qs.set("max_bot_score", String(filters.max_bot_score));
+    if (filters.min_roi != null) qs.set("min_roi", String(filters.min_roi));
+    if (filters.min_consistency != null)
+      qs.set("min_consistency", String(filters.min_consistency));
+    if (filters.primary_category)
+      qs.set("primary_category", filters.primary_category);
   }
 
   return request<LeaderboardResponse>(`/wallets/leaderboard?${qs}`);
 }
 
 // ── Wallet Profile ───────────────────────────────────────
+
+export interface TraderProfileData {
+  median_trade_interval_s: number;
+  trade_interval_cv: number;
+  size_cv: number;
+  active_hours: number;
+  bot_score: number;
+  primary_category: string;
+  category_concentration: number;
+  market_count: number;
+  avg_entry_timing: number;
+  avg_hold_duration_h: number;
+  avg_position_size_usd: number;
+}
+
+export interface LiveStats {
+  current_value: number;
+  unrealized_pnl: number;
+  open_positions: number;
+}
 
 export interface WalletProfile {
   address: string;
@@ -221,6 +257,10 @@ export interface WalletProfile {
   total_trades: number;
   total_volume: number;
   labels: string[];
+  profile_image_url: string | null;
+  display_name: string | null;
+  trader_profile: TraderProfileData | null;
+  live_stats: LiveStats;
   scores: Record<
     string,
     {
@@ -229,6 +269,8 @@ export interface WalletProfile {
       win_rate: number;
       trade_count: number;
       rank_volume: number;
+      roi: number;
+      consistency: number;
     }
   >;
   recent_trades: WalletTrade[];
@@ -267,6 +309,46 @@ export function fetchWalletTrades(
   return request<WalletTradesResponse>(`/wallets/${address}/trades?${qs}`);
 }
 
+// ── Closed Positions ─────────────────────────────────────
+
+export interface ClosedPosition {
+  asset: string;
+  conditionId: string;
+  avgPrice: number;
+  totalBought: number;
+  realizedPnl: number;
+  curPrice: number;
+  timestamp: number;
+  title: string;
+  slug: string;
+  icon: string;
+  outcome: string;
+  endDate: string;
+}
+
+export interface ClosedPositionsResponse {
+  positions: ClosedPosition[];
+  has_more: boolean;
+}
+
+export function fetchClosedPositions(
+  address: string,
+  limit = 50,
+  offset = 0,
+  sortBy = "TIMESTAMP",
+  sortDir = "DESC",
+): Promise<ClosedPositionsResponse> {
+  const qs = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    sort_by: sortBy,
+    sort_dir: sortDir,
+  });
+  return request<ClosedPositionsResponse>(
+    `/wallets/${address}/closed-positions?${qs}`,
+  );
+}
+
 // ── Feed ─────────────────────────────────────────────────
 
 export interface FeedTrade {
@@ -280,6 +362,9 @@ export interface FeedTrade {
   outcome: string;
   title: string;
   timestamp: number;
+  profile_image_url: string | null;
+  display_name: string | null;
+  market_image: string | null;
 }
 
 export interface FeedTradesResponse {

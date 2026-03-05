@@ -155,6 +155,21 @@ class PositionSummary(BaseModel):
 # ── Builder attribution ─────────────────────────────────
 
 
+class ClosedPositionSummary(BaseModel):
+    asset: str = ""
+    conditionId: str = ""
+    avgPrice: float = 0.0
+    totalBought: float = 0.0
+    realizedPnl: float = 0.0
+    curPrice: float = 0.0
+    timestamp: int = 0
+    title: str = ""
+    slug: str = ""
+    icon: str = ""
+    outcome: str = ""
+    endDate: str = ""
+
+
 class BuilderTrade(BaseModel):
     id: str = ""
     market: str = ""
