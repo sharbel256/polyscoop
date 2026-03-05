@@ -20,19 +20,17 @@ logger = logging.getLogger(__name__)
 FRONTEND_DIST = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 
 
-async def _run_migrations() -> None:
-    """Run alembic migrations programmatically (sync, in a thread)."""
-    import asyncio
-
+def _run_migrations() -> None:
+    """Run alembic migrations synchronously before the event loop starts."""
     from alembic.config import Config
 
     from alembic import command
 
-    def _migrate() -> None:
-        alembic_cfg = Config(str(Path(__file__).resolve().parent.parent / "alembic.ini"))
-        command.upgrade(alembic_cfg, "head")
+    alembic_cfg = Config(str(Path(__file__).resolve().parent.parent / "alembic.ini"))
+    command.upgrade(alembic_cfg, "head")
 
-    await asyncio.to_thread(_migrate)
+
+_run_migrations()
 
 
 @asynccontextmanager
@@ -40,10 +38,8 @@ async def lifespan(app: FastAPI):
     setup_logging()
     logger.info("polyscoop starting up")
 
-    # Run database migrations (idempotent — safe on every startup)
     from app.db.engine import engine
 
-    await _run_migrations()
     logger.info("database migrations applied")
 
     # Initialize Redis
