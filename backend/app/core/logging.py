@@ -62,12 +62,20 @@ def setup_logging() -> None:
     # Clear any handlers set by alembic's fileConfig or previous reloads
     root.handlers.clear()
 
+    # Re-enable loggers disabled by alembic's fileConfig(disable_existing_loggers=True)
+    for log in logging.Logger.manager.loggerDict.values():
+        if isinstance(log, logging.Logger):
+            log.disabled = False
+
     correlation_filter = CorrelationIdFilter()
 
     # ── Console handler ───────────────────────────────────
     console = logging.StreamHandler(sys.stdout)
     console.setLevel(LOG_LEVEL)
-    console.setFormatter(ColorConsoleFormatter(CONSOLE_FORMAT, datefmt="%H:%M:%S"))
+    if sys.stdout.isatty():
+        console.setFormatter(ColorConsoleFormatter(CONSOLE_FORMAT, datefmt="%H:%M:%S"))
+    else:
+        console.setFormatter(logging.Formatter(FILE_FORMAT, datefmt="%Y-%m-%d %H:%M:%S"))
     console.addFilter(correlation_filter)
     root.addHandler(console)
 
