@@ -15,12 +15,15 @@ interface MarketDetailProps {
   slug?: string;
 }
 
-export function MarketDetail({ conditionId, tokenId, slug }: MarketDetailProps) {
+export function MarketDetail({
+  conditionId,
+  tokenId,
+  slug,
+}: MarketDetailProps) {
   const { data: market, isLoading: marketLoading } = useMarket(conditionId);
   const { data: orderbook, isLoading: orderbookLoading } =
     useOrderbook(tokenId);
-  const { data: priceData, isLoading: priceLoading } =
-    usePriceHistory(tokenId);
+  const { data: priceData, isLoading: priceLoading } = usePriceHistory(tokenId);
 
   if (marketLoading || orderbookLoading || priceLoading) {
     return (
@@ -136,15 +139,17 @@ export function MarketDetail({ conditionId, tokenId, slug }: MarketDetailProps) 
         {points.length > 1 ? (
           <svg viewBox="0 0 200 60" className="h-[60px] w-full">
             <defs>
-              <linearGradient
-                id="sparkline-fill"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop offset="0%" stopColor="rgb(75 107 255)" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="rgb(75 107 255)" stopOpacity="0" />
+              <linearGradient id="sparkline-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="0%"
+                  stopColor="rgb(75 107 255)"
+                  stopOpacity="0.2"
+                />
+                <stop
+                  offset="100%"
+                  stopColor="rgb(75 107 255)"
+                  stopOpacity="0"
+                />
               </linearGradient>
             </defs>
             <path d={areaPath} fill="url(#sparkline-fill)" />

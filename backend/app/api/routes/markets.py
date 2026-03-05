@@ -291,23 +291,23 @@ async def get_market(
         async with httpx.AsyncClient(timeout=15) as client:
             resp = await client.get(
                 f"{GAMMA_URL}/markets",
-                params={"conditionId": condition_id, "limit": 1},
+                params={"condition_ids": condition_id, "limit": 1},
             )
             resp.raise_for_status()
             data = resp.json()
     except httpx.TimeoutException:
-        logger.error("gamma_timeout GET /markets?condition_id=%s", condition_id)
+        logger.error("gamma_timeout GET /markets?condition_ids=%s", condition_id)
         raise HTTPException(status_code=504, detail="Upstream service timed out")
     except httpx.HTTPStatusError as exc:
         logger.error(
-            "gamma_http_error GET /markets?condition_id=%s status=%d",
+            "gamma_http_error GET /markets?condition_ids=%s status=%d",
             condition_id,
             exc.response.status_code,
         )
         raise HTTPException(status_code=502, detail="Upstream service error")
     except httpx.HTTPError as exc:
         logger.error(
-            "gamma_connection_error GET /markets?condition_id=%s error=%s",
+            "gamma_connection_error GET /markets?condition_ids=%s error=%s",
             condition_id,
             exc,
         )
@@ -381,8 +381,8 @@ async def get_orderbook(
     bids = data.get("bids", [])
     asks = data.get("asks", [])
 
-    best_bid = float(bids[0]["price"]) if bids else None
-    best_ask = float(asks[0]["price"]) if asks else None
+    best_bid = max((float(b["price"]) for b in bids), default=None) if bids else None
+    best_ask = min((float(a["price"]) for a in asks), default=None) if asks else None
     mid = (best_bid + best_ask) / 2 if best_bid and best_ask else None
     spread = best_ask - best_bid if best_bid and best_ask else None
 

@@ -12,6 +12,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import TrackedMarket, Trade, TraderProfile, Wallet
 
+_MIN_WIN_RATE = 0.7  # hard floor: hide wallets below 70% win rate
+_MAX_EASY_WIN_RATIO = 0.5  # exclude wallets where >50% of buys are at 90%+ price
+
 
 async def compute_live_leaderboard(
     session: AsyncSession,
@@ -114,8 +117,7 @@ async def compute_live_leaderboard(
     vol_rows = {r.wallet: r for r in (await session.execute(vol_q)).all()}
     pnl_rows = {r.wallet: r for r in (await session.execute(pnl_q)).all()}
     buy_vol_rows = {
-        r.wallet: float(r.buy_volume or 0)
-        for r in (await session.execute(buy_vol_q)).all()
+        r.wallet: float(r.buy_volume or 0) for r in (await session.execute(buy_vol_q)).all()
     }
     per_market_rows = (await session.execute(per_market_pnl_q)).all()
 
@@ -134,16 +136,14 @@ async def compute_live_leaderboard(
         label_result = await session.execute(label_q)
         label_addrs = {r[0] for r in label_result.all()}
 
-    # ── TraderProfile filter: pre-fetch when bot/category filters active ──
-    profile_map: dict[str, TraderProfile] | None = None
-    if max_bot_score is not None or primary_category is not None:
-        tp_q = select(TraderProfile)
-        if max_bot_score is not None:
-            tp_q = tp_q.where(TraderProfile.bot_score <= max_bot_score)
-        if primary_category is not None:
-            tp_q = tp_q.where(TraderProfile.primary_category == primary_category)
-        tp_result = await session.execute(tp_q)
-        profile_map = {tp.wallet: tp for tp in tp_result.scalars().all()}
+    # ── TraderProfile filter: always fetch for easy_win_ratio + optional bot/category ──
+    tp_q = select(TraderProfile).where(TraderProfile.easy_win_ratio <= _MAX_EASY_WIN_RATIO)
+    if max_bot_score is not None:
+        tp_q = tp_q.where(TraderProfile.bot_score <= max_bot_score)
+    if primary_category is not None:
+        tp_q = tp_q.where(TraderProfile.primary_category == primary_category)
+    tp_result = await session.execute(tp_q)
+    profile_map: dict[str, TraderProfile] = {tp.wallet: tp for tp in tp_result.scalars().all()}
 
     # ── Merge into result list ───────────────────────────────
     rows: list[dict] = []
@@ -169,11 +169,12 @@ async def compute_live_leaderboard(
             consistency = 0.0
 
         # Threshold filters
+        effective_min_wr = max(_MIN_WIN_RATE, min_win_rate or 0)
+        if win_rate < effective_min_wr:
+            continue
         if min_trades is not None and trade_count < min_trades:
             continue
         if min_volume is not None and volume < min_volume:
-            continue
-        if min_win_rate is not None and win_rate < min_win_rate:
             continue
         if pnl_positive and pnl <= 0:
             continue
@@ -183,7 +184,7 @@ async def compute_live_leaderboard(
             continue
         if min_consistency is not None and consistency < min_consistency:
             continue
-        if profile_map is not None and wallet_addr not in profile_map:
+        if wallet_addr not in profile_map:
             continue
 
         rows.append(
@@ -232,14 +233,24 @@ async def compute_live_leaderboard(
     # Batch-fetch profile data for this page
     if page:
         page_addrs = [r["address"] for r in page]
-        profile_q = select(
-            Wallet.address, Wallet.profile_image_url, Wallet.display_name
-        ).where(Wallet.address.in_(page_addrs))
+        profile_q = select(Wallet.address, Wallet.profile_image_url, Wallet.display_name).where(
+            Wallet.address.in_(page_addrs)
+        )
         profile_rows = (await session.execute(profile_q)).all()
-        profile_map = {r.address: r for r in profile_rows}
+        wallet_info = {r.address: r for r in profile_rows}
+
+        lt_q = (
+            select(Trade.wallet, func.max(Trade.timestamp).label("last_ts"))
+            .where(Trade.wallet.in_(page_addrs))
+            .group_by(Trade.wallet)
+        )
+        lt_rows = (await session.execute(lt_q)).all()
+        last_trade_map = {r.wallet: r.last_ts for r in lt_rows}
+
         for row in page:
-            pr = profile_map.get(row["address"])
-            row["profile_image_url"] = pr.profile_image_url if pr else None
-            row["display_name"] = pr.display_name if pr else None
+            wi = wallet_info.get(row["address"])
+            row["profile_image_url"] = wi.profile_image_url if wi else None
+            row["display_name"] = wi.display_name if wi else None
+            row["last_trade_at"] = last_trade_map.get(row["address"])
 
     return page, total

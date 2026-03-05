@@ -5,9 +5,20 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useLeaderboard } from "@/hooks/useLeaderboard";
 import { WalletInfo } from "@/components/WalletInfo";
 import { SessionPanel } from "@/components/SessionPanel";
-import { formatUsd, formatCompact, shortenAddress, timeAgo, cn } from "@/lib/utils";
+import {
+  formatUsd,
+  formatCompact,
+  shortenAddress,
+  timeAgo,
+  cn,
+} from "@/lib/utils";
 import { WalletAvatar } from "@/components/WalletAvatar";
-import { Card, Spinner, AnimatedNumber, GradientBackground } from "@/components/ui";
+import {
+  Card,
+  Spinner,
+  AnimatedNumber,
+  GradientBackground,
+} from "@/components/ui";
 import {
   staggerContainer,
   staggerItem,
@@ -80,9 +91,7 @@ function RankBadge({ rank }: { rank: number }) {
   };
   const gradient = gradients[rank];
   if (!gradient) {
-    return (
-      <span className="font-mono text-foreground-muted">{rank}</span>
-    );
+    return <span className="font-mono text-foreground-muted">{rank}</span>;
   }
   return (
     <span
@@ -276,9 +285,7 @@ export function DashboardPage() {
                               {formatCompact(w.trade_count)}
                             </td>
                             <td className="hidden px-4 py-2 text-right text-foreground-muted sm:table-cell">
-                              {w.last_trade_at
-                                ? timeAgo(w.last_trade_at)
-                                : "—"}
+                              {w.last_trade_at ? timeAgo(w.last_trade_at) : "—"}
                             </td>
                           </motion.tr>
                         ))}

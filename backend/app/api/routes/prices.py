@@ -21,7 +21,7 @@ _SAFE_ID_RE = re.compile(r"^[a-zA-Z0-9_\-]{1,128}$")
 async def get_price_history(
     market: str = Query(pattern=r"^[a-zA-Z0-9_\-]{1,128}$"),
     interval: str = Query(default="1h", pattern=r"^(1m|5m|15m|1h|4h|1d|1w)$"),
-    fidelity: int = Query(default=100, ge=1, le=1000),
+    fidelity: int = Query(default=1, ge=1, le=1000),
 ):
     """Fetch price history for a market from the CLOB."""
     if not _SAFE_ID_RE.fullmatch(market):

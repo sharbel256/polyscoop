@@ -21,8 +21,7 @@ type SortDir = "asc" | "desc";
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir | null }) {
   if (!active || dir === null)
     return <ChevronsUpDown className="h-3 w-3 text-foreground-muted" />;
-  if (dir === "desc")
-    return <ChevronDown className="h-3 w-3 text-brand-400" />;
+  if (dir === "desc") return <ChevronDown className="h-3 w-3 text-brand-400" />;
   return <ChevronUp className="h-3 w-3 text-brand-400" />;
 }
 
@@ -150,9 +149,7 @@ export function TradesTable({
                   address={address}
                   isExpanded={isExpanded}
                   onToggle={() =>
-                    setExpandedRow(
-                      isExpanded ? null : trade.transaction_hash,
-                    )
+                    setExpandedRow(isExpanded ? null : trade.transaction_hash)
                   }
                 />
               );
@@ -208,7 +205,9 @@ function TradeRow({
         variants={tableRowVariant}
         onClick={onToggle}
         className={`flex cursor-pointer items-center gap-2 px-3 py-3 transition-colors hover:bg-surface-elevated/30 sm:gap-4 sm:px-4 ${
-          isExpanded ? "bg-surface-elevated/20 border-l-2 border-l-brand-500" : ""
+          isExpanded
+            ? "bg-surface-elevated/20 border-l-2 border-l-brand-500"
+            : ""
         }`}
       >
         <span className="hidden w-16 shrink-0 font-mono text-xs text-foreground-muted sm:block">

@@ -44,7 +44,10 @@ function SignupForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2 sm:flex-row sm:items-center">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col gap-2 sm:flex-row sm:items-center"
+    >
       <input
         type="email"
         placeholder="your email"

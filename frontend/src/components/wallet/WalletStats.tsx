@@ -11,11 +11,7 @@ interface WalletStatsProps {
   rank7d?: number;
 }
 
-export function WalletStats({
-  liveStats,
-  volume7d,
-  rank7d,
-}: WalletStatsProps) {
+export function WalletStats({ liveStats, volume7d, rank7d }: WalletStatsProps) {
   return (
     <motion.div
       variants={staggerContainer}
@@ -34,10 +30,8 @@ export function WalletStats({
           icon: TrendingUp,
           label: "unrealized pnl",
           value: liveStats?.unrealized_pnl ?? 0,
-          format: (n: number) =>
-            `${n >= 0 ? "+" : ""}${formatUsd(n)}`,
-          color: (n: number) =>
-            n >= 0 ? "text-emerald-400" : "text-red-400",
+          format: (n: number) => `${n >= 0 ? "+" : ""}${formatUsd(n)}`,
+          color: (n: number) => (n >= 0 ? "text-emerald-400" : "text-red-400"),
         },
         {
           icon: BarChart3,

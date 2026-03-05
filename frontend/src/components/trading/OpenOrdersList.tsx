@@ -47,7 +47,9 @@ export function OpenOrdersList({
   return (
     <div className="card">
       <h2 className="text-lg font-bold text-foreground">open orders</h2>
-      <p className="mt-1 text-sm text-foreground-muted">your pending limit orders</p>
+      <p className="mt-1 text-sm text-foreground-muted">
+        your pending limit orders
+      </p>
 
       {orders.length === 0 ? (
         <div className="mt-6 flex items-center justify-center rounded-xl border border-dashed border-white/[0.06] py-12 text-foreground-muted">

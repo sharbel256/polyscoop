@@ -76,8 +76,7 @@ async def compute_scores(session: AsyncSession) -> int:
             .group_by(Trade.wallet)
         )
         buy_vol_rows = {
-            r.wallet: float(r.buy_volume or 0)
-            for r in (await session.execute(buy_vol_q)).all()
+            r.wallet: float(r.buy_volume or 0) for r in (await session.execute(buy_vol_q)).all()
         }
 
         # Aggregate PnL and win rate per wallet + collect per-market returns
@@ -228,8 +227,7 @@ async def compute_scores(session: AsyncSession) -> int:
                 .group_by(Trade.wallet)
             )
             buy_vol_rows = {
-                r.wallet: float(r.buy_volume or 0)
-                for r in (await session.execute(buy_vol_q)).all()
+                r.wallet: float(r.buy_volume or 0) for r in (await session.execute(buy_vol_q)).all()
             }
 
             wallet_pnl: dict[str, float] = {}

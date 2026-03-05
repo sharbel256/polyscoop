@@ -129,9 +129,7 @@ async def leaderboard(
 
     if sorting_by_bot_score:
         order_expr = (
-            TraderProfile.bot_score.asc()
-            if sort_dir == "asc"
-            else TraderProfile.bot_score.desc()
+            TraderProfile.bot_score.asc() if sort_dir == "asc" else TraderProfile.bot_score.desc()
         )
     else:
         oc = order_col_map.get(sort_by, WalletScore.volume)
@@ -214,17 +212,13 @@ async def feed_trades(
 ):
     """Recent trades across tracked markets, optionally scoped to a category."""
     # Only show trades from quality wallets (70%+ win rate, not easy-win gaming)
-    easy_win_wallets = (
-        select(TraderProfile.wallet)
-        .where(TraderProfile.easy_win_ratio > _MAX_EASY_WIN_RATIO)
+    easy_win_wallets = select(TraderProfile.wallet).where(
+        TraderProfile.easy_win_ratio > _MAX_EASY_WIN_RATIO
     )
-    profitable_wallets = (
-        select(WalletScore.wallet)
-        .where(
-            WalletScore.timeframe == "7d",
-            WalletScore.win_rate >= _MIN_WIN_RATE,
-            WalletScore.wallet.not_in(easy_win_wallets),
-        )
+    profitable_wallets = select(WalletScore.wallet).where(
+        WalletScore.timeframe == "7d",
+        WalletScore.win_rate >= _MIN_WIN_RATE,
+        WalletScore.wallet.not_in(easy_win_wallets),
     )
 
     if category == "mentions":
@@ -254,9 +248,9 @@ async def feed_trades(
     wallet_addrs = list({t.wallet for t in trades})
     cond_ids = list({t.condition_id for t in trades})
 
-    wallet_q = select(
-        Wallet.address, Wallet.profile_image_url, Wallet.display_name
-    ).where(Wallet.address.in_(wallet_addrs))
+    wallet_q = select(Wallet.address, Wallet.profile_image_url, Wallet.display_name).where(
+        Wallet.address.in_(wallet_addrs)
+    )
     wallet_rows = (await session.execute(wallet_q)).all()
     wallet_map = {r.address: r for r in wallet_rows}
 
@@ -279,8 +273,12 @@ async def feed_trades(
                 "outcome": t.outcome,
                 "title": t.title,
                 "timestamp": t.timestamp,
-                "profile_image_url": wallet_map[t.wallet].profile_image_url if t.wallet in wallet_map else None,
-                "display_name": wallet_map[t.wallet].display_name if t.wallet in wallet_map else None,
+                "profile_image_url": (
+                    wallet_map[t.wallet].profile_image_url if t.wallet in wallet_map else None
+                ),
+                "display_name": (
+                    wallet_map[t.wallet].display_name if t.wallet in wallet_map else None
+                ),
                 "market_image": market_map.get(t.condition_id),
             }
             for t in trades
@@ -313,12 +311,14 @@ async def wallet_profile(
     recent_trades = trades_result.scalars().all()
 
     # Compute from actual Trade rows (source of truth from Polymarket API)
-    stats_row = (await session.execute(
-        select(
-            func.count().label("trade_count"),
-            func.coalesce(func.sum(Trade.size * Trade.price), 0).label("total_volume"),
-        ).where(Trade.wallet == address.lower())
-    )).one()
+    stats_row = (
+        await session.execute(
+            select(
+                func.count().label("trade_count"),
+                func.coalesce(func.sum(Trade.size * Trade.price), 0).label("total_volume"),
+            ).where(Trade.wallet == address.lower())
+        )
+    ).one()
     trade_count = stats_row.trade_count
     total_volume = float(stats_row.total_volume)
 
@@ -341,12 +341,19 @@ async def wallet_profile(
         }
 
     # Fetch live stats from Polymarket Data API
-    live_stats = {"current_value": 0.0, "unrealized_pnl": 0.0, "open_positions": 0}
+    live_stats = {
+        "current_value": 0.0,
+        "unrealized_pnl": 0.0,
+        "open_positions": 0,
+    }
     try:
-        live_positions = await data_api_get("/positions", params={"user": address.lower(), "sizeThreshold": "0.1"})
+        params = {"user": address.lower(), "sizeThreshold": "0.1"}
+        live_positions = await data_api_get("/positions", params=params)
         if isinstance(live_positions, list):
             live_stats["open_positions"] = len(live_positions)
-            live_stats["current_value"] = sum(float(p.get("currentValue", 0)) for p in live_positions)
+            live_stats["current_value"] = sum(
+                float(p.get("currentValue", 0)) for p in live_positions
+            )
             live_stats["unrealized_pnl"] = sum(float(p.get("cashPnl", 0)) for p in live_positions)
     except Exception:
         logger.warning("Failed to fetch live positions for %s", address)
@@ -473,7 +480,10 @@ async def wallet_closed_positions(
     address: str = Path(pattern=_ADDR_RE),
     limit: int = Query(default=50, ge=1, le=50),
     offset: int = Query(default=0, ge=0),
-    sort_by: str = Query(default="TIMESTAMP", pattern=r"^(REALIZEDPNL|TITLE|PRICE|AVGPRICE|TIMESTAMP)$"),
+    sort_by: str = Query(
+        default="TIMESTAMP",
+        pattern=r"^(REALIZEDPNL|TITLE|PRICE|AVGPRICE|TIMESTAMP)$",
+    ),
     sort_dir: str = Query(default="DESC", pattern=r"^(ASC|DESC)$"),
 ):
     """Proxy Polymarket closed-positions API for a wallet."""

@@ -11,21 +11,8 @@ import {
 } from "@/hooks/useCopyTrade";
 import { cn, formatUsd, shortenAddress } from "@/lib/utils";
 import { Card, Spinner, SideBadge, EmptyState, Tabs } from "@/components/ui";
-import {
-  staggerContainer,
-  staggerItem,
-  scaleIn,
-  slideUp,
-} from "@/lib/motion";
-import {
-  Copy,
-  Plus,
-  Power,
-  Trash2,
-  History,
-  Settings,
-  X,
-} from "lucide-react";
+import { staggerContainer, staggerItem, scaleIn, slideUp } from "@/lib/motion";
+import { Copy, Plus, Power, Trash2, History, Settings, X } from "lucide-react";
 
 type Tab = "configs" | "history";
 
@@ -108,8 +95,16 @@ export function CopyTradePage() {
         value={tab}
         onChange={setTab}
         options={[
-          { value: "configs" as Tab, label: "targets", icon: <Settings className="h-3.5 w-3.5" /> },
-          { value: "history" as Tab, label: "history", icon: <History className="h-3.5 w-3.5" /> },
+          {
+            value: "configs" as Tab,
+            label: "targets",
+            icon: <Settings className="h-3.5 w-3.5" />,
+          },
+          {
+            value: "history" as Tab,
+            label: "history",
+            icon: <History className="h-3.5 w-3.5" />,
+          },
         ]}
         layoutId="copytrade-tabs"
       />

@@ -19,8 +19,7 @@ type SortDir = "asc" | "desc";
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir | null }) {
   if (!active || dir === null)
     return <ChevronsUpDown className="h-3 w-3 text-foreground-muted" />;
-  if (dir === "desc")
-    return <ChevronDown className="h-3 w-3 text-brand-400" />;
+  if (dir === "desc") return <ChevronDown className="h-3 w-3 text-brand-400" />;
   return <ChevronUp className="h-3 w-3 text-brand-400" />;
 }
 
@@ -83,9 +82,7 @@ export function PositionsTable({ positions, isLoading }: PositionsTableProps) {
         <EmptyState icon={Briefcase} title="no active positions" />
       ) : filteredPositions.length === 0 ? (
         <div className="flex items-center justify-center py-12 text-foreground-muted">
-          <p className="text-sm">
-            no positions match &quot;{posSearch}&quot;
-          </p>
+          <p className="text-sm">no positions match &quot;{posSearch}&quot;</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -252,10 +249,7 @@ function PositionRow({
             exit={{ opacity: 0, height: 0 }}
           >
             <td colSpan={6} className="p-0">
-              <MarketDetail
-                conditionId={pos.conditionId}
-                tokenId={pos.asset}
-              />
+              <MarketDetail conditionId={pos.conditionId} tokenId={pos.asset} />
             </td>
           </motion.tr>
         )}

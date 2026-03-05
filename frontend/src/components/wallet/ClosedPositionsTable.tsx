@@ -5,12 +5,7 @@ import { cn, formatUsd } from "@/lib/utils";
 import { Card, Spinner, EmptyState } from "@/components/ui";
 import { staggerContainer, tableRowVariant } from "@/lib/motion";
 import { MarketDetail } from "./MarketDetail";
-import {
-  Archive,
-  ChevronDown,
-  ChevronUp,
-  ChevronsUpDown,
-} from "lucide-react";
+import { Archive, ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
 
 type PnlFilter = "all" | "winners" | "losers";
 type SortKey = "TIMESTAMP" | "REALIZEDPNL" | "AVGPRICE";
@@ -19,8 +14,7 @@ type SortDir = "ASC" | "DESC";
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir | null }) {
   if (!active || dir === null)
     return <ChevronsUpDown className="h-3 w-3 text-foreground-muted" />;
-  if (dir === "DESC")
-    return <ChevronDown className="h-3 w-3 text-brand-400" />;
+  if (dir === "DESC") return <ChevronDown className="h-3 w-3 text-brand-400" />;
   return <ChevronUp className="h-3 w-3 text-brand-400" />;
 }
 
@@ -244,9 +238,7 @@ function ClosedPositionRow({
                 <span
                   className={cn(
                     "text-xs",
-                    pos.outcome === "Yes"
-                      ? "text-emerald-400"
-                      : "text-red-400",
+                    pos.outcome === "Yes" ? "text-emerald-400" : "text-red-400",
                   )}
                 >
                   {pos.outcome.toLowerCase()}

@@ -16,10 +16,7 @@ export function ComingSoonPage() {
         className="relative flex flex-1 flex-col items-center justify-center px-4 py-24"
       >
         {/* Logo */}
-        <motion.div
-          variants={staggerItem}
-          className="flex items-center gap-3"
-        >
+        <motion.div variants={staggerItem} className="flex items-center gap-3">
           <div className="glow-brand flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700">
             <Telescope className="h-7 w-7 text-white" />
           </div>

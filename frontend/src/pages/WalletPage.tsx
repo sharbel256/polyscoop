@@ -22,7 +22,9 @@ export function WalletPage() {
   const [tab, setTab] = useState<Tab>("positions");
   const [tradesPage, setTradesPage] = useState(0);
   const [closedPage, setClosedPage] = useState(0);
-  const [closedSortBy, setClosedSortBy] = useState<"TIMESTAMP" | "REALIZEDPNL" | "AVGPRICE">("TIMESTAMP");
+  const [closedSortBy, setClosedSortBy] = useState<
+    "TIMESTAMP" | "REALIZEDPNL" | "AVGPRICE"
+  >("TIMESTAMP");
   const [closedSortDir, setClosedSortDir] = useState<"ASC" | "DESC">("DESC");
 
   const { data: positions, isLoading: positionsLoading } =
@@ -102,7 +104,10 @@ export function WalletPage() {
             <Skeleton className="h-4 w-32" />
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="rounded-lg bg-surface-elevated/40 p-3 space-y-2">
+                <div
+                  key={i}
+                  className="rounded-lg bg-surface-elevated/40 p-3 space-y-2"
+                >
                   <Skeleton className="h-3 w-16" />
                   <Skeleton className="h-6 w-20" />
                 </div>
@@ -146,10 +151,7 @@ export function WalletPage() {
       {/* Tab content */}
       <motion.div variants={staggerItem}>
         {tab === "positions" && (
-          <PositionsTable
-            positions={positions}
-            isLoading={positionsLoading}
-          />
+          <PositionsTable positions={positions} isLoading={positionsLoading} />
         )}
 
         {tab === "closed" && (

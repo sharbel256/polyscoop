@@ -22,7 +22,7 @@ export function useOrderbook(tokenId: string | undefined) {
 export function usePriceHistory(
   tokenId: string | undefined,
   interval = "1h",
-  fidelity = 100,
+  fidelity = 1,
 ) {
   return useQuery({
     queryKey: ["priceHistory", tokenId, interval, fidelity],

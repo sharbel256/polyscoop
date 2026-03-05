@@ -20,7 +20,8 @@ export function BottomNav() {
 
       <div className="mx-auto flex h-16 max-w-lg items-center justify-around">
         {TABS.map(({ to, icon: Icon, label }) => {
-          const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+          const active =
+            to === "/" ? pathname === "/" : pathname.startsWith(to);
           return (
             <Link
               key={to}

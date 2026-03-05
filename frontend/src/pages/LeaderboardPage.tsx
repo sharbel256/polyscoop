@@ -6,11 +6,7 @@ import type { LeaderboardFilters } from "@/lib/api";
 import { cn, formatUsd, formatCompact, shortenAddress } from "@/lib/utils";
 import { WalletAvatar } from "@/components/WalletAvatar";
 import { Card, Spinner, EmptyState, Pagination } from "@/components/ui";
-import {
-  staggerContainer,
-  tableRowVariant,
-  slideUp,
-} from "@/lib/motion";
+import { staggerContainer, tableRowVariant, slideUp } from "@/lib/motion";
 import {
   Trophy,
   Search,
@@ -32,11 +28,31 @@ const RELATIVE_RANGES = [
 
 const SORTABLE_COLUMNS = [
   { key: "volume", label: "volume", align: "right" as const, visibility: "" },
-  { key: "trade_count", label: "trades", align: "right" as const, visibility: "hidden md:table-cell" },
-  { key: "pnl", label: "pnl", align: "right" as const, visibility: "hidden sm:table-cell" },
-  { key: "win_rate", label: "win rate", align: "right" as const, visibility: "hidden lg:table-cell" },
+  {
+    key: "trade_count",
+    label: "trades",
+    align: "right" as const,
+    visibility: "hidden md:table-cell",
+  },
+  {
+    key: "pnl",
+    label: "pnl",
+    align: "right" as const,
+    visibility: "hidden sm:table-cell",
+  },
+  {
+    key: "win_rate",
+    label: "win rate",
+    align: "right" as const,
+    visibility: "hidden lg:table-cell",
+  },
   { key: "roi", label: "roi", align: "right" as const, visibility: "" },
-  { key: "consistency", label: "consistency", align: "right" as const, visibility: "hidden lg:table-cell" },
+  {
+    key: "consistency",
+    label: "consistency",
+    align: "right" as const,
+    visibility: "hidden lg:table-cell",
+  },
 ] as const;
 
 type SortDir = "asc" | "desc" | null;
@@ -141,12 +157,22 @@ export function LeaderboardPage() {
   };
 
   const clearFilters = () => {
-    setMinTrades(""); setMinVolume(""); setMinWinRate("");
-    setPnlPositive(false); setLabelFilter(""); setMarketFilter("");
-    setEventFilter(""); setMaxBotScore(""); setMinRoi("");
-    setMinConsistency(""); setPrimaryCategory("");
-    setDateMode("preset"); setRelativeRange(null);
-    setFromDate(""); setToDate(""); setPage(0);
+    setMinTrades("");
+    setMinVolume("");
+    setMinWinRate("");
+    setPnlPositive(false);
+    setLabelFilter("");
+    setMarketFilter("");
+    setEventFilter("");
+    setMaxBotScore("");
+    setMinRoi("");
+    setMinConsistency("");
+    setPrimaryCategory("");
+    setDateMode("preset");
+    setRelativeRange(null);
+    setFromDate("");
+    setToDate("");
+    setPage(0);
   };
 
   const SortIcon = ({ col }: { col: string }) => {
@@ -199,7 +225,10 @@ export function LeaderboardPage() {
             {TIMEFRAMES.map((tf) => (
               <button
                 key={tf}
-                onClick={() => { setTimeframe(tf); setPage(0); }}
+                onClick={() => {
+                  setTimeframe(tf);
+                  setPage(0);
+                }}
                 className={cn(
                   "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
                   timeframe === tf
@@ -243,16 +272,43 @@ export function LeaderboardPage() {
               <div className="mt-4 border-t border-white/[0.06] pt-4">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {[
-                    { label: "min trades", value: minTrades, set: setMinTrades, type: "number", placeholder: "e.g. 5", min: 1 },
-                    { label: "min volume (usd)", value: minVolume, set: setMinVolume, type: "number", placeholder: "e.g. 100", min: 0 },
-                    { label: "min win rate (%)", value: minWinRate, set: setMinWinRate, type: "number", placeholder: "e.g. 50", min: 0, max: 100 },
+                    {
+                      label: "min trades",
+                      value: minTrades,
+                      set: setMinTrades,
+                      type: "number",
+                      placeholder: "e.g. 5",
+                      min: 1,
+                    },
+                    {
+                      label: "min volume (usd)",
+                      value: minVolume,
+                      set: setMinVolume,
+                      type: "number",
+                      placeholder: "e.g. 100",
+                      min: 0,
+                    },
+                    {
+                      label: "min win rate (%)",
+                      value: minWinRate,
+                      set: setMinWinRate,
+                      type: "number",
+                      placeholder: "e.g. 50",
+                      min: 0,
+                      max: 100,
+                    },
                   ].map(({ label, value, set, ...inputProps }) => (
                     <div key={label}>
-                      <label className="mb-1 block text-xs text-foreground-muted">{label}</label>
+                      <label className="mb-1 block text-xs text-foreground-muted">
+                        {label}
+                      </label>
                       <input
                         {...inputProps}
                         value={value}
-                        onChange={(e) => { set(e.target.value); setPage(0); }}
+                        onChange={(e) => {
+                          set(e.target.value);
+                          setPage(0);
+                        }}
                         className="input w-full"
                       />
                     </div>
@@ -263,7 +319,10 @@ export function LeaderboardPage() {
                       <input
                         type="checkbox"
                         checked={pnlPositive}
-                        onChange={(e) => { setPnlPositive(e.target.checked); setPage(0); }}
+                        onChange={(e) => {
+                          setPnlPositive(e.target.checked);
+                          setPage(0);
+                        }}
                         className="h-4 w-4 rounded border-border bg-surface-elevated text-brand-500"
                       />
                       profitable only
@@ -271,34 +330,79 @@ export function LeaderboardPage() {
                   </div>
 
                   {[
-                    { label: "max bot score (0-1)", value: maxBotScore, set: setMaxBotScore, step: 0.1 },
-                    { label: "min roi", value: minRoi, set: setMinRoi, step: 0.01 },
-                    { label: "min consistency", value: minConsistency, set: setMinConsistency, step: 0.1 },
+                    {
+                      label: "max bot score (0-1)",
+                      value: maxBotScore,
+                      set: setMaxBotScore,
+                      step: 0.1,
+                    },
+                    {
+                      label: "min roi",
+                      value: minRoi,
+                      set: setMinRoi,
+                      step: 0.01,
+                    },
+                    {
+                      label: "min consistency",
+                      value: minConsistency,
+                      set: setMinConsistency,
+                      step: 0.1,
+                    },
                   ].map(({ label, value, set, step }) => (
                     <div key={label}>
-                      <label className="mb-1 block text-xs text-foreground-muted">{label}</label>
+                      <label className="mb-1 block text-xs text-foreground-muted">
+                        {label}
+                      </label>
                       <input
                         type="number"
                         step={step}
                         value={value}
-                        onChange={(e) => { set(e.target.value); setPage(0); }}
+                        onChange={(e) => {
+                          set(e.target.value);
+                          setPage(0);
+                        }}
                         className="input w-full"
                       />
                     </div>
                   ))}
 
                   {[
-                    { label: "primary category", value: primaryCategory, set: setPrimaryCategory, placeholder: "e.g. mentions" },
-                    { label: "wallet label", value: labelFilter, set: setLabelFilter, placeholder: "e.g. whale" },
-                    { label: "market (condition id)", value: marketFilter, set: setMarketFilter, placeholder: "condition_id" },
-                    { label: "event id", value: eventFilter, set: setEventFilter, placeholder: "event_id" },
+                    {
+                      label: "primary category",
+                      value: primaryCategory,
+                      set: setPrimaryCategory,
+                      placeholder: "e.g. mentions",
+                    },
+                    {
+                      label: "wallet label",
+                      value: labelFilter,
+                      set: setLabelFilter,
+                      placeholder: "e.g. whale",
+                    },
+                    {
+                      label: "market (condition id)",
+                      value: marketFilter,
+                      set: setMarketFilter,
+                      placeholder: "condition_id",
+                    },
+                    {
+                      label: "event id",
+                      value: eventFilter,
+                      set: setEventFilter,
+                      placeholder: "event_id",
+                    },
                   ].map(({ label, value, set, placeholder }) => (
                     <div key={label}>
-                      <label className="mb-1 block text-xs text-foreground-muted">{label}</label>
+                      <label className="mb-1 block text-xs text-foreground-muted">
+                        {label}
+                      </label>
                       <input
                         type="text"
                         value={value}
-                        onChange={(e) => { set(e.target.value); setPage(0); }}
+                        onChange={(e) => {
+                          set(e.target.value);
+                          setPage(0);
+                        }}
                         placeholder={placeholder}
                         className="input w-full"
                       />
@@ -313,19 +417,32 @@ export function LeaderboardPage() {
                     </label>
                     <div className="mb-2 glass-subtle flex w-fit items-center gap-1 rounded-lg p-0.5">
                       <button
-                        onClick={() => { setDateMode("preset"); setFromDate(""); setToDate(""); setPage(0); }}
+                        onClick={() => {
+                          setDateMode("preset");
+                          setFromDate("");
+                          setToDate("");
+                          setPage(0);
+                        }}
                         className={cn(
                           "rounded-md px-2 py-1 text-xs transition-colors",
-                          dateMode === "preset" ? "bg-surface-hover text-foreground" : "text-foreground-muted hover:text-foreground",
+                          dateMode === "preset"
+                            ? "bg-surface-hover text-foreground"
+                            : "text-foreground-muted hover:text-foreground",
                         )}
                       >
                         relative
                       </button>
                       <button
-                        onClick={() => { setDateMode("custom"); setRelativeRange(null); setPage(0); }}
+                        onClick={() => {
+                          setDateMode("custom");
+                          setRelativeRange(null);
+                          setPage(0);
+                        }}
                         className={cn(
                           "rounded-md px-2 py-1 text-xs transition-colors",
-                          dateMode === "custom" ? "bg-surface-hover text-foreground" : "text-foreground-muted hover:text-foreground",
+                          dateMode === "custom"
+                            ? "bg-surface-hover text-foreground"
+                            : "text-foreground-muted hover:text-foreground",
                         )}
                       >
                         custom
@@ -337,7 +454,12 @@ export function LeaderboardPage() {
                         {RELATIVE_RANGES.map((r) => (
                           <button
                             key={r.label}
-                            onClick={() => { setRelativeRange(relativeRange === r.seconds ? null : r.seconds); setPage(0); }}
+                            onClick={() => {
+                              setRelativeRange(
+                                relativeRange === r.seconds ? null : r.seconds,
+                              );
+                              setPage(0);
+                            }}
                             className={cn(
                               "rounded-md px-2.5 py-1 text-xs transition-colors",
                               relativeRange === r.seconds
@@ -351,9 +473,25 @@ export function LeaderboardPage() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                        <input type="datetime-local" value={fromDate} onChange={(e) => { setFromDate(e.target.value); setPage(0); }} className="input min-w-0 text-xs" />
+                        <input
+                          type="datetime-local"
+                          value={fromDate}
+                          onChange={(e) => {
+                            setFromDate(e.target.value);
+                            setPage(0);
+                          }}
+                          className="input min-w-0 text-xs"
+                        />
                         <span className="text-xs text-foreground-muted">—</span>
-                        <input type="datetime-local" value={toDate} onChange={(e) => { setToDate(e.target.value); setPage(0); }} className="input min-w-0 text-xs" />
+                        <input
+                          type="datetime-local"
+                          value={toDate}
+                          onChange={(e) => {
+                            setToDate(e.target.value);
+                            setPage(0);
+                          }}
+                          className="input min-w-0 text-xs"
+                        />
                       </div>
                     )}
                   </div>
@@ -361,7 +499,10 @@ export function LeaderboardPage() {
 
                 {hasActiveFilters && (
                   <div className="mt-3 flex justify-end">
-                    <button onClick={clearFilters} className="btn-ghost text-xs">
+                    <button
+                      onClick={clearFilters}
+                      className="btn-ghost text-xs"
+                    >
                       clear filters
                     </button>
                   </div>
@@ -389,7 +530,9 @@ export function LeaderboardPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/[0.06] text-left text-xs text-foreground-muted">
-                    <th className="hidden px-2 py-3 sm:table-cell sm:px-4">rank</th>
+                    <th className="hidden px-2 py-3 sm:table-cell sm:px-4">
+                      rank
+                    </th>
                     <th className="px-2 py-3 sm:px-4">wallet</th>
                     {SORTABLE_COLUMNS.map((col) => (
                       <th
@@ -397,7 +540,9 @@ export function LeaderboardPage() {
                         className={cn(
                           "px-2 py-3 text-right sm:px-4",
                           col.visibility,
-                          sortBy === col.key && sortDir !== null ? "text-brand-400" : "",
+                          sortBy === col.key && sortDir !== null
+                            ? "text-brand-400"
+                            : "",
                         )}
                       >
                         <button
@@ -436,7 +581,13 @@ export function LeaderboardPage() {
                             size="sm"
                           />
                           <div className="min-w-0">
-                            <p className={w.display_name ? "truncate text-sm text-foreground-secondary" : "font-mono text-sm text-brand-400"}>
+                            <p
+                              className={
+                                w.display_name
+                                  ? "truncate text-sm text-foreground-secondary"
+                                  : "font-mono text-sm text-brand-400"
+                              }
+                            >
                               {w.display_name
                                 ? w.display_name.toLowerCase()
                                 : shortenAddress(w.address, 6)}
@@ -461,7 +612,8 @@ export function LeaderboardPage() {
                           w.pnl >= 0 ? "text-emerald-400" : "text-red-400",
                         )}
                       >
-                        {w.pnl >= 0 ? "+" : ""}{formatUsd(w.pnl)}
+                        {w.pnl >= 0 ? "+" : ""}
+                        {formatUsd(w.pnl)}
                       </td>
                       <td className="hidden px-4 py-3 text-right font-mono text-foreground-secondary lg:table-cell">
                         {(w.win_rate * 100).toFixed(1)}%
@@ -472,7 +624,8 @@ export function LeaderboardPage() {
                           w.roi >= 0 ? "text-emerald-400" : "text-red-400",
                         )}
                       >
-                        {w.roi >= 0 ? "+" : ""}{(w.roi * 100).toFixed(1)}%
+                        {w.roi >= 0 ? "+" : ""}
+                        {(w.roi * 100).toFixed(1)}%
                       </td>
                       <td className="hidden px-4 py-3 text-right font-mono text-foreground-secondary lg:table-cell">
                         {w.consistency.toFixed(2)}

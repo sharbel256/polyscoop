@@ -77,9 +77,7 @@ async def compute_profiles(session: AsyncSession) -> int:
         sizes = [t.size * t.price for t in trades]
 
         # ── Bot detection ─────────────────────────────────
-        intervals = [
-            timestamps[i] - timestamps[i - 1] for i in range(1, len(timestamps))
-        ]
+        intervals = [timestamps[i] - timestamps[i - 1] for i in range(1, len(timestamps))]
         intervals = [iv for iv in intervals if iv > 0]
 
         if intervals:
@@ -136,9 +134,7 @@ async def compute_profiles(session: AsyncSession) -> int:
             span = ml - mf
             if span <= 0:
                 continue
-            wallet_first_in_market = min(
-                t.timestamp for t in trades if t.condition_id == cid
-            )
+            wallet_first_in_market = min(t.timestamp for t in trades if t.condition_id == cid)
             entry_timings.append((wallet_first_in_market - mf) / span)
 
         avg_entry_timing = statistics.mean(entry_timings) if entry_timings else 0.0
@@ -154,11 +150,17 @@ async def compute_profiles(session: AsyncSession) -> int:
                 if duration_h > 0:
                     hold_durations.append(duration_h)
 
-        avg_hold_duration_h = (
-            statistics.mean(hold_durations) if hold_durations else 0.0
-        )
+        avg_hold_duration_h = statistics.mean(hold_durations) if hold_durations else 0.0
 
         avg_position_size_usd = statistics.mean(sizes) if sizes else 0.0
+
+        # Easy win ratio: fraction of BUY trades entered at >= 90% probability
+        buy_trades = [t for t in trades if t.side == "BUY"]
+        if buy_trades:
+            easy_buys = sum(1 for t in buy_trades if t.price >= 0.90)
+            easy_win_ratio = easy_buys / len(buy_trades)
+        else:
+            easy_win_ratio = 0.0
 
         profiles.append(
             {
@@ -174,6 +176,7 @@ async def compute_profiles(session: AsyncSession) -> int:
                 "avg_entry_timing": round(avg_entry_timing, 4),
                 "avg_hold_duration_h": round(avg_hold_duration_h, 2),
                 "avg_position_size_usd": round(avg_position_size_usd, 2),
+                "easy_win_ratio": round(easy_win_ratio, 4),
             }
         )
 
@@ -197,6 +200,7 @@ async def compute_profiles(session: AsyncSession) -> int:
                     "avg_entry_timing": stmt.excluded.avg_entry_timing,
                     "avg_hold_duration_h": stmt.excluded.avg_hold_duration_h,
                     "avg_position_size_usd": stmt.excluded.avg_position_size_usd,
+                    "easy_win_ratio": stmt.excluded.easy_win_ratio,
                 },
             )
             await session.execute(stmt)

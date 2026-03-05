@@ -10,7 +10,8 @@ export function useClosedPositions(
 ) {
   return useQuery({
     queryKey: ["closedPositions", address, limit, offset, sortBy, sortDir],
-    queryFn: () => fetchClosedPositions(address!, limit, offset, sortBy, sortDir),
+    queryFn: () =>
+      fetchClosedPositions(address!, limit, offset, sortBy, sortDir),
     enabled: !!address,
   });
 }

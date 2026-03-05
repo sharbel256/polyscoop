@@ -44,18 +44,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(
           "inline-flex items-center justify-center rounded-xl font-semibold transition-all active:scale-[0.97]",
           variantStyles[variant],
-          variant === "secondary" && "bg-surface-elevated/60 hover:bg-surface-hover/80",
+          variant === "secondary" &&
+            "bg-surface-elevated/60 hover:bg-surface-hover/80",
           sizeStyles[size],
           className,
         )}
         {...props}
       >
         {loading ? (
-          <svg
-            className="h-4 w-4 animate-spin"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
+          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
             <circle
               cx="12"
               cy="12"

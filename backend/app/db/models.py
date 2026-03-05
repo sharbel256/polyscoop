@@ -135,6 +135,7 @@ class TraderProfile(Base):
     avg_entry_timing: Mapped[float] = mapped_column(Float, default=0.0)
     avg_hold_duration_h: Mapped[float] = mapped_column(Float, default=0.0)
     avg_position_size_usd: Mapped[float] = mapped_column(Float, default=0.0)
+    easy_win_ratio: Mapped[float] = mapped_column(Float, default=0.0)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
     )

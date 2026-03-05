@@ -21,7 +21,13 @@ const STEP_INFO: Record<SessionStep, { label: string; icon: typeof Wallet }> = {
   complete: { label: "session active", icon: CheckCircle2 },
 };
 
-const STEPS: SessionStep[] = ["checking", "deploying", "credentials", "approvals", "complete"];
+const STEPS: SessionStep[] = [
+  "checking",
+  "deploying",
+  "credentials",
+  "approvals",
+  "complete",
+];
 
 export function SessionPanel() {
   const { isConnected } = useWallet();
@@ -47,7 +53,9 @@ export function SessionPanel() {
   return (
     <div className="card">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground-secondary">trading session</h3>
+        <h3 className="text-sm font-semibold text-foreground-secondary">
+          trading session
+        </h3>
 
         {isReady && (
           <button

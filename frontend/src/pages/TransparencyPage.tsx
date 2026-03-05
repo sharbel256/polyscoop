@@ -90,9 +90,7 @@ function HowItWorksSection() {
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand-500/20 to-accent-purple/20">
                     <Icon className="h-4 w-4 text-brand-400" />
                   </div>
-                  <h3 className="text-sm font-bold text-foreground">
-                    {title}
-                  </h3>
+                  <h3 className="text-sm font-bold text-foreground">{title}</h3>
                 </div>
                 <p className="text-xs leading-relaxed text-foreground-secondary">
                   {description}
@@ -152,14 +150,30 @@ function BuilderTradesSection() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-white/[0.06] text-foreground-muted">
-                  <th className="px-2 py-2.5 text-left font-medium sm:px-4">time</th>
-                  <th className="px-2 py-2.5 text-left font-medium sm:px-4">market</th>
-                  <th className="px-2 py-2.5 text-left font-medium sm:px-4">side</th>
-                  <th className="hidden px-4 py-2.5 text-right font-medium sm:table-cell">size</th>
-                  <th className="hidden px-4 py-2.5 text-right font-medium sm:table-cell">price</th>
-                  <th className="hidden px-4 py-2.5 text-left font-medium sm:table-cell">outcome</th>
-                  <th className="hidden px-4 py-2.5 text-left font-medium md:table-cell">status</th>
-                  <th className="px-2 py-2.5 text-left font-medium sm:px-4">tx</th>
+                  <th className="px-2 py-2.5 text-left font-medium sm:px-4">
+                    time
+                  </th>
+                  <th className="px-2 py-2.5 text-left font-medium sm:px-4">
+                    market
+                  </th>
+                  <th className="px-2 py-2.5 text-left font-medium sm:px-4">
+                    side
+                  </th>
+                  <th className="hidden px-4 py-2.5 text-right font-medium sm:table-cell">
+                    size
+                  </th>
+                  <th className="hidden px-4 py-2.5 text-right font-medium sm:table-cell">
+                    price
+                  </th>
+                  <th className="hidden px-4 py-2.5 text-left font-medium sm:table-cell">
+                    outcome
+                  </th>
+                  <th className="hidden px-4 py-2.5 text-left font-medium md:table-cell">
+                    status
+                  </th>
+                  <th className="px-2 py-2.5 text-left font-medium sm:px-4">
+                    tx
+                  </th>
                 </tr>
               </thead>
               <motion.tbody
