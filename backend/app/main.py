@@ -26,8 +26,11 @@ def _run_migrations() -> None:
 
     from alembic import command
 
-    alembic_cfg = Config(str(Path(__file__).resolve().parent.parent / "alembic.ini"))
-    command.upgrade(alembic_cfg, "head")
+    try:
+        alembic_cfg = Config(str(Path(__file__).resolve().parent.parent / "alembic.ini"))
+        command.upgrade(alembic_cfg, "head")
+    except Exception:
+        logging.getLogger(__name__).warning("migrations skipped — database not available")
 
 
 _run_migrations()
