@@ -92,7 +92,7 @@ function AppLayout() {
 }
 
 export default function App() {
-  if (import.meta.env.DEV) {
+  if (!import.meta.env.DEV) {
     return <ComingSoonPage />;
   }
 
