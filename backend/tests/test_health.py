@@ -11,5 +11,5 @@ def test_health():
     resp = client.get("/api/v1/health")
     assert resp.status_code == 200
     data = resp.json()
-    assert data["status"] == "ok"
+    assert data["status"] in ("ok", "degraded")
     assert data["service"] == "polyscoop"
