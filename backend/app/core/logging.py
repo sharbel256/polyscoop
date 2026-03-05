@@ -62,6 +62,11 @@ def setup_logging() -> None:
     # Clear any handlers set by alembic's fileConfig or previous reloads
     root.handlers.clear()
 
+    # Re-enable loggers disabled by alembic's fileConfig(disable_existing_loggers=True)
+    for log in logging.Logger.manager.loggerDict.values():
+        if isinstance(log, logging.Logger):
+            log.disabled = False
+
     correlation_filter = CorrelationIdFilter()
 
     # ── Console handler ───────────────────────────────────
