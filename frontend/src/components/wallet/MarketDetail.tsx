@@ -12,9 +12,10 @@ import { ExternalLink } from "lucide-react";
 interface MarketDetailProps {
   conditionId: string;
   tokenId?: string;
+  slug?: string;
 }
 
-export function MarketDetail({ conditionId, tokenId }: MarketDetailProps) {
+export function MarketDetail({ conditionId, tokenId, slug }: MarketDetailProps) {
   const { data: market, isLoading: marketLoading } = useMarket(conditionId);
   const { data: orderbook, isLoading: orderbookLoading } =
     useOrderbook(tokenId);
@@ -67,20 +68,22 @@ export function MarketDetail({ conditionId, tokenId }: MarketDetailProps) {
               <span>vol: {formatUsd(market.volume)}</span>
               <span>liq: {formatUsd(market.liquidity)}</span>
             </div>
-            <a
-              href={`https://polymarket.com/event/${market.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300"
-            >
-              view on polymarket
-              <ExternalLink className="h-3 w-3" />
-            </a>
           </>
         ) : (
           <p className="text-xs text-foreground-muted">
             market data unavailable
           </p>
+        )}
+        {(market?.slug || slug) && (
+          <a
+            href={`https://polymarket.com/event/${market?.slug || slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-brand-400 hover:text-brand-300"
+          >
+            view on polymarket
+            <ExternalLink className="h-3 w-3" />
+          </a>
         )}
       </div>
 

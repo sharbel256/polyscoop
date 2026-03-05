@@ -4,21 +4,26 @@ import { motion } from "framer-motion";
 import { useWalletPositions } from "@/hooks/useWalletPositions";
 import { useWalletProfile } from "@/hooks/useWalletProfile";
 import { useWalletTrades } from "@/hooks/useWalletTrades";
+import { useClosedPositions } from "@/hooks/useClosedPositions";
 import { Tabs, Skeleton } from "@/components/ui";
 import { WalletHeader } from "@/components/wallet/WalletHeader";
 import { WalletStats } from "@/components/wallet/WalletStats";
 import { TraderAnalytics } from "@/components/wallet/TraderAnalytics";
 import { PositionsTable } from "@/components/wallet/PositionsTable";
+import { ClosedPositionsTable } from "@/components/wallet/ClosedPositionsTable";
 import { TradesTable } from "@/components/wallet/TradesTable";
 import { staggerContainer, staggerItem } from "@/lib/motion";
 import { ArrowLeft, Copy } from "lucide-react";
 
-type Tab = "positions" | "trades";
+type Tab = "positions" | "closed" | "trades";
 
 export function WalletPage() {
   const { address } = useParams<{ address: string }>();
   const [tab, setTab] = useState<Tab>("positions");
   const [tradesPage, setTradesPage] = useState(0);
+  const [closedPage, setClosedPage] = useState(0);
+  const [closedSortBy, setClosedSortBy] = useState<"TIMESTAMP" | "REALIZEDPNL" | "AVGPRICE">("TIMESTAMP");
+  const [closedSortDir, setClosedSortDir] = useState<"ASC" | "DESC">("DESC");
 
   const { data: positions, isLoading: positionsLoading } =
     useWalletPositions(address);
@@ -28,6 +33,13 @@ export function WalletPage() {
     address,
     50,
     tradesPage * 50,
+  );
+  const { data: closedData, isLoading: closedLoading } = useClosedPositions(
+    address,
+    50,
+    closedPage * 50,
+    closedSortBy,
+    closedSortDir,
   );
 
   const score7d = profile?.scores?.["7d"];
@@ -76,8 +88,7 @@ export function WalletPage() {
       ) : profile ? (
         <motion.div variants={staggerItem}>
           <WalletStats
-            totalVolume={profile.total_volume}
-            totalTrades={profile.total_trades}
+            liveStats={profile.live_stats}
             volume7d={score7d?.volume}
             rank7d={score7d?.rank_volume}
           />
@@ -125,7 +136,8 @@ export function WalletPage() {
           onChange={setTab}
           options={[
             { value: "positions" as Tab, label: "positions" },
-            { value: "trades" as Tab, label: "trade history" },
+            { value: "closed" as Tab, label: "closed positions" },
+            { value: "trades" as Tab, label: "live trades" },
           ]}
           layoutId="wallet-tabs"
         />
@@ -137,6 +149,23 @@ export function WalletPage() {
           <PositionsTable
             positions={positions}
             isLoading={positionsLoading}
+          />
+        )}
+
+        {tab === "closed" && (
+          <ClosedPositionsTable
+            positions={closedData?.positions}
+            hasMore={closedData?.has_more ?? false}
+            isLoading={closedLoading}
+            page={closedPage}
+            onPageChange={setClosedPage}
+            sortBy={closedSortBy}
+            sortDir={closedSortDir}
+            onSortChange={(key, dir) => {
+              setClosedSortBy(key);
+              setClosedSortDir(dir);
+              setClosedPage(0);
+            }}
           />
         )}
 

@@ -147,6 +147,7 @@
   /* Gradient border (top accent) */
   .gradient-border {
     position: relative;
+    overflow: hidden;
   }
   .gradient-border::before {
     content: "";
@@ -156,7 +157,6 @@
     right: 0;
     height: 2px;
     background: linear-gradient(90deg, #22d3ee, #4b6bff, #a855f7);
-    border-radius: inherit;
   }
 
   /* Shimmer skeleton */

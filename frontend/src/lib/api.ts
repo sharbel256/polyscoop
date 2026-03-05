@@ -244,6 +244,12 @@ export interface TraderProfileData {
   avg_position_size_usd: number;
 }
 
+export interface LiveStats {
+  current_value: number;
+  unrealized_pnl: number;
+  open_positions: number;
+}
+
 export interface WalletProfile {
   address: string;
   first_seen: string | null;
@@ -254,6 +260,7 @@ export interface WalletProfile {
   profile_image_url: string | null;
   display_name: string | null;
   trader_profile: TraderProfileData | null;
+  live_stats: LiveStats;
   scores: Record<
     string,
     {
@@ -300,6 +307,46 @@ export function fetchWalletTrades(
     offset: String(offset),
   });
   return request<WalletTradesResponse>(`/wallets/${address}/trades?${qs}`);
+}
+
+// ── Closed Positions ─────────────────────────────────────
+
+export interface ClosedPosition {
+  asset: string;
+  conditionId: string;
+  avgPrice: number;
+  totalBought: number;
+  realizedPnl: number;
+  curPrice: number;
+  timestamp: number;
+  title: string;
+  slug: string;
+  icon: string;
+  outcome: string;
+  endDate: string;
+}
+
+export interface ClosedPositionsResponse {
+  positions: ClosedPosition[];
+  has_more: boolean;
+}
+
+export function fetchClosedPositions(
+  address: string,
+  limit = 50,
+  offset = 0,
+  sortBy = "TIMESTAMP",
+  sortDir = "DESC",
+): Promise<ClosedPositionsResponse> {
+  const qs = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+    sort_by: sortBy,
+    sort_dir: sortDir,
+  });
+  return request<ClosedPositionsResponse>(
+    `/wallets/${address}/closed-positions?${qs}`,
+  );
 }
 
 // ── Feed ─────────────────────────────────────────────────

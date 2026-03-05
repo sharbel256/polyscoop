@@ -10,11 +10,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.engine import get_session
 from app.db.models import TrackedMarket, Trade, TraderProfile, Wallet, WalletScore, WalletSnapshot
 from app.services.leaderboard import compute_live_leaderboard
+from app.services.polymarket import data_api_get
 
 router = APIRouter(prefix="/wallets", tags=["wallets"])
 logger = logging.getLogger(__name__)
 
 _ADDR_RE = r"^0x[a-fA-F0-9]{40}$"
+_MIN_WIN_RATE = 0.7  # hard floor: hide wallets below 70% win rate
+_MAX_EASY_WIN_RATIO = 0.5  # exclude wallets where >50% of buys are at 90%+ price
 
 _TIMEFRAME_DELTAS = {
     "24h": timedelta(hours=24),
@@ -106,13 +109,14 @@ async def leaderboard(
     # For bot_score sort, we need to join TraderProfile
     sorting_by_bot_score = sort_by == "bot_score"
 
+    effective_min_wr = max(_MIN_WIN_RATE, min_win_rate or 0)
+
     where = [WalletScore.timeframe == timeframe, WalletScore.category == category]
+    where.append(WalletScore.win_rate >= effective_min_wr)
     if min_trades is not None:
         where.append(WalletScore.trade_count >= min_trades)
     if min_volume is not None:
         where.append(WalletScore.volume >= min_volume)
-    if min_win_rate is not None:
-        where.append(WalletScore.win_rate >= min_win_rate)
     if pnl_positive:
         where.append(WalletScore.pnl > 0)
     if min_roi is not None:
@@ -120,12 +124,8 @@ async def leaderboard(
     if min_consistency is not None:
         where.append(WalletScore.consistency >= min_consistency)
 
-    # Determine if we need TraderProfile join
-    needs_profile_join = (
-        max_bot_score is not None
-        or primary_category is not None
-        or sorting_by_bot_score
-    )
+    # Determine if we need TraderProfile join (always yes due to easy_win_ratio filter)
+    needs_profile_join = True
 
     if sorting_by_bot_score:
         order_expr = (
@@ -148,6 +148,9 @@ async def leaderboard(
     if needs_profile_join:
         q = q.join(TraderProfile, WalletScore.wallet == TraderProfile.wallet)
         count_q = count_q.join(TraderProfile, WalletScore.wallet == TraderProfile.wallet)
+        # Hard filter: exclude wallets that mostly buy near-certain outcomes
+        q = q.where(TraderProfile.easy_win_ratio <= _MAX_EASY_WIN_RATIO)
+        count_q = count_q.where(TraderProfile.easy_win_ratio <= _MAX_EASY_WIN_RATIO)
         if max_bot_score is not None:
             q = q.where(TraderProfile.bot_score <= max_bot_score)
             count_q = count_q.where(TraderProfile.bot_score <= max_bot_score)
@@ -168,6 +171,18 @@ async def leaderboard(
 
     total = (await session.execute(count_q)).scalar() or 0
 
+    # Batch-fetch last trade timestamp for this page
+    page_addrs = [ws.wallet for ws, _, _ in rows]
+    last_trade_map: dict[str, int] = {}
+    if page_addrs:
+        lt_q = (
+            select(Trade.wallet, func.max(Trade.timestamp).label("last_ts"))
+            .where(Trade.wallet.in_(page_addrs))
+            .group_by(Trade.wallet)
+        )
+        lt_rows = (await session.execute(lt_q)).all()
+        last_trade_map = {r.wallet: r.last_ts for r in lt_rows}
+
     return {
         "wallets": [
             {
@@ -182,6 +197,7 @@ async def leaderboard(
                 "consistency": ws.consistency,
                 "profile_image_url": img,
                 "display_name": name,
+                "last_trade_at": last_trade_map.get(ws.wallet),
             }
             for ws, img, name in rows
         ],
@@ -197,19 +213,40 @@ async def feed_trades(
     session: AsyncSession = Depends(get_session),
 ):
     """Recent trades across tracked markets, optionally scoped to a category."""
+    # Only show trades from quality wallets (70%+ win rate, not easy-win gaming)
+    easy_win_wallets = (
+        select(TraderProfile.wallet)
+        .where(TraderProfile.easy_win_ratio > _MAX_EASY_WIN_RATIO)
+    )
+    profitable_wallets = (
+        select(WalletScore.wallet)
+        .where(
+            WalletScore.timeframe == "7d",
+            WalletScore.win_rate >= _MIN_WIN_RATE,
+            WalletScore.wallet.not_in(easy_win_wallets),
+        )
+    )
+
     if category == "mentions":
-        # Only trades on mentions markets
         mentions_cids = select(TrackedMarket.condition_id).where(
             TrackedMarket.category == "mentions"
         )
         q = (
             select(Trade)
-            .where(Trade.condition_id.in_(mentions_cids))
+            .where(
+                Trade.condition_id.in_(mentions_cids),
+                Trade.wallet.in_(profitable_wallets),
+            )
             .order_by(Trade.timestamp.desc())
             .limit(limit)
         )
     else:
-        q = select(Trade).order_by(Trade.timestamp.desc()).limit(limit)
+        q = (
+            select(Trade)
+            .where(Trade.wallet.in_(profitable_wallets))
+            .order_by(Trade.timestamp.desc())
+            .limit(limit)
+        )
     result = await session.execute(q)
     trades = result.scalars().all()
 
@@ -275,6 +312,16 @@ async def wallet_profile(
     trades_result = await session.execute(trades_q)
     recent_trades = trades_result.scalars().all()
 
+    # Compute from actual Trade rows (source of truth from Polymarket API)
+    stats_row = (await session.execute(
+        select(
+            func.count().label("trade_count"),
+            func.coalesce(func.sum(Trade.size * Trade.price), 0).label("total_volume"),
+        ).where(Trade.wallet == address.lower())
+    )).one()
+    trade_count = stats_row.trade_count
+    total_volume = float(stats_row.total_volume)
+
     # Fetch trader profile
     tp = await session.get(TraderProfile, address.lower())
     trader_profile = None
@@ -293,16 +340,28 @@ async def wallet_profile(
             "avg_position_size_usd": tp.avg_position_size_usd,
         }
 
+    # Fetch live stats from Polymarket Data API
+    live_stats = {"current_value": 0.0, "unrealized_pnl": 0.0, "open_positions": 0}
+    try:
+        live_positions = await data_api_get("/positions", params={"user": address.lower(), "sizeThreshold": "0.1"})
+        if isinstance(live_positions, list):
+            live_stats["open_positions"] = len(live_positions)
+            live_stats["current_value"] = sum(float(p.get("currentValue", 0)) for p in live_positions)
+            live_stats["unrealized_pnl"] = sum(float(p.get("cashPnl", 0)) for p in live_positions)
+    except Exception:
+        logger.warning("Failed to fetch live positions for %s", address)
+
     return {
         "address": address.lower(),
         "first_seen": wallet.first_seen.isoformat() if wallet else None,
         "last_seen": wallet.last_seen.isoformat() if wallet else None,
-        "total_trades": wallet.total_trades if wallet else 0,
-        "total_volume": wallet.total_volume if wallet else 0,
+        "total_trades": trade_count,
+        "total_volume": total_volume,
         "labels": wallet.labels if wallet else [],
         "profile_image_url": wallet.profile_image_url if wallet else None,
         "display_name": wallet.display_name if wallet else None,
         "trader_profile": trader_profile,
+        "live_stats": live_stats,
         "scores": {
             s.timeframe: {
                 "volume": s.volume,
@@ -406,4 +465,33 @@ async def wallet_positions(
             }
             for s in snapshots
         ],
+    }
+
+
+@router.get("/{address}/closed-positions")
+async def wallet_closed_positions(
+    address: str = Path(pattern=_ADDR_RE),
+    limit: int = Query(default=50, ge=1, le=50),
+    offset: int = Query(default=0, ge=0),
+    sort_by: str = Query(default="TIMESTAMP", pattern=r"^(REALIZEDPNL|TITLE|PRICE|AVGPRICE|TIMESTAMP)$"),
+    sort_dir: str = Query(default="DESC", pattern=r"^(ASC|DESC)$"),
+):
+    """Proxy Polymarket closed-positions API for a wallet."""
+    params = {
+        "user": address.lower(),
+        "limit": limit,
+        "offset": offset,
+        "sortBy": sort_by,
+        "sortDir": sort_dir,
+    }
+    try:
+        data = await data_api_get("/closed-positions", params=params)
+    except Exception:
+        logger.exception("Failed to fetch closed positions for %s", address)
+        return {"positions": [], "has_more": False}
+
+    positions = data if isinstance(data, list) else []
+    return {
+        "positions": positions,
+        "has_more": len(positions) == limit,
     }

@@ -1,19 +1,18 @@
 import { motion } from "framer-motion";
-import { formatUsd, formatCompact } from "@/lib/utils";
+import { formatUsd } from "@/lib/utils";
 import { Card, AnimatedNumber } from "@/components/ui";
 import { staggerContainer, staggerItem, cardHover } from "@/lib/motion";
-import { BarChart3, Activity, TrendingUp } from "lucide-react";
+import { DollarSign, TrendingUp, BarChart3 } from "lucide-react";
+import type { LiveStats } from "@/lib/api";
 
 interface WalletStatsProps {
-  totalVolume: number;
-  totalTrades: number;
+  liveStats?: LiveStats;
   volume7d?: number;
   rank7d?: number;
 }
 
 export function WalletStats({
-  totalVolume,
-  totalTrades,
+  liveStats,
   volume7d,
   rank7d,
 }: WalletStatsProps) {
@@ -26,30 +25,33 @@ export function WalletStats({
     >
       {[
         {
-          icon: BarChart3,
-          label: "total volume",
-          value: totalVolume,
+          icon: DollarSign,
+          label: "current value",
+          value: liveStats?.current_value ?? 0,
           format: formatUsd,
         },
         {
-          icon: Activity,
-          label: "total trades",
-          value: totalTrades,
-          format: formatCompact,
+          icon: TrendingUp,
+          label: "unrealized pnl",
+          value: liveStats?.unrealized_pnl ?? 0,
+          format: (n: number) =>
+            `${n >= 0 ? "+" : ""}${formatUsd(n)}`,
+          color: (n: number) =>
+            n >= 0 ? "text-emerald-400" : "text-red-400",
         },
         {
-          icon: TrendingUp,
+          icon: BarChart3,
           label: "7d volume",
           value: volume7d ?? 0,
           format: formatUsd,
         },
         {
-          icon: TrendingUp,
+          icon: BarChart3,
           label: "7d rank",
           value: rank7d ?? 0,
           format: (n: number) => (n > 0 ? `#${Math.round(n)}` : "—"),
         },
-      ].map(({ icon: Icon, label, value, format }) => (
+      ].map(({ icon: Icon, label, value, format, color }) => (
         <motion.div key={label} variants={staggerItem}>
           <motion.div variants={cardHover} initial="rest" whileHover="hover">
             <Card>
@@ -60,7 +62,7 @@ export function WalletStats({
               <AnimatedNumber
                 value={value}
                 format={format}
-                className="mt-1 block font-mono text-lg font-bold text-foreground"
+                className={`mt-1 block font-mono text-lg font-bold ${color ? color(value) : "text-foreground"}`}
               />
             </Card>
           </motion.div>
