@@ -28,6 +28,19 @@ def _run_migrations() -> None:
 
     try:
         alembic_cfg = Config(str(Path(__file__).resolve().parent.parent / "alembic.ini"))
+        # Set a connect timeout so we don't hang if the DB is unreachable
+        from app.core.config import settings as cfg
+
+        sync_url = cfg.DATABASE_URL.replace("+asyncpg", "")
+        params = []
+        if "connect_timeout" not in sync_url:
+            params.append("connect_timeout=10")
+        if "localhost" not in sync_url and "sslmode" not in sync_url:
+            params.append("sslmode=require")
+        if params:
+            sep = "&" if "?" in sync_url else "?"
+            sync_url += sep + "&".join(params)
+        alembic_cfg.set_main_option("sqlalchemy.url", sync_url)
         command.upgrade(alembic_cfg, "head")
     except Exception:
         logging.getLogger(__name__).warning("migrations skipped — database not available")

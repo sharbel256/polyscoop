@@ -72,7 +72,10 @@ def setup_logging() -> None:
     # ── Console handler ───────────────────────────────────
     console = logging.StreamHandler(sys.stdout)
     console.setLevel(LOG_LEVEL)
-    console.setFormatter(ColorConsoleFormatter(CONSOLE_FORMAT, datefmt="%H:%M:%S"))
+    if sys.stdout.isatty():
+        console.setFormatter(ColorConsoleFormatter(CONSOLE_FORMAT, datefmt="%H:%M:%S"))
+    else:
+        console.setFormatter(logging.Formatter(FILE_FORMAT, datefmt="%Y-%m-%d %H:%M:%S"))
     console.addFilter(correlation_filter)
     root.addHandler(console)
 

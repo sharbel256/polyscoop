@@ -30,10 +30,15 @@ class Settings:
     )
 
     # ── Database & Cache ─────────────────────────────────
-    DATABASE_URL = os.getenv(
+    _raw_db_url = os.getenv(
         "DATABASE_URL",
         "postgresql+asyncpg://postgres:postgres@localhost:5432/polyscoop",
     )
+    # Normalize to asyncpg driver — the secret may use plain postgresql://
+    if "+asyncpg" not in _raw_db_url:
+        DATABASE_URL = _raw_db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    else:
+        DATABASE_URL = _raw_db_url
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     MENTIONS_TAG_SLUG = os.getenv("MENTIONS_TAG_SLUG", "mention-markets")
 
