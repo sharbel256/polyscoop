@@ -71,10 +71,9 @@ async def lifespan(app: FastAPI):
         logger.warning("redis not available — live features disabled")
         app.state.redis = None
 
-    # Start background workers
-    from app.workers.manager import start_workers, stop_workers
-
-    await start_workers()
+    # Background workers paused — uncomment to re-enable data ingestion
+    # from app.workers.manager import start_workers, stop_workers
+    # await start_workers()
 
     # Initialize shared httpx client
     from app.services.polymarket import get_client
@@ -92,7 +91,7 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("polyscoop shutting down")
-    await stop_workers()
+    # await stop_workers()
 
     from app.services.polymarket import close_client
 
