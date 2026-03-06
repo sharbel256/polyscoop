@@ -111,6 +111,22 @@
     }
   }
 
+  /* Dark date/time picker popups */
+  .dark input[type="date"],
+  .dark input[type="time"],
+  .dark input[type="datetime-local"],
+  [data-theme="dark"] input[type="date"],
+  [data-theme="dark"] input[type="time"],
+  [data-theme="dark"] input[type="datetime-local"] {
+    color-scheme: dark;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+    cursor: pointer;
+  }
+
   /* Glass utilities */
   .glass {
     @apply border border-white/[0.06];

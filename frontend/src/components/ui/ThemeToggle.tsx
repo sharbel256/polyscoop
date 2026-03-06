@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Moon, Monitor } from "lucide-react";
-import { useTheme, type Theme } from "@/providers/ThemeProvider";
+import { useTheme } from "@/hooks/useTheme";
+import type { Theme } from "@/providers/ThemeProvider";
 
 const cycle: Theme[] = ["light", "dark", "system"];
 const icons = { light: Sun, dark: Moon, system: Monitor } as const;

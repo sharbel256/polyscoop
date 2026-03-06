@@ -6,9 +6,10 @@
 const BASE = "/api/v1";
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const { headers: initHeaders, ...rest } = init ?? {};
   const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...init?.headers },
-    ...init,
+    ...rest,
+    headers: { "Content-Type": "application/json", ...initHeaders },
   });
 
   if (!res.ok) {
@@ -521,4 +522,242 @@ export function fetchCopytradeHistory(
   return request<{ executions: CopytradeExecution[]; total: number }>(
     `/copytrade/history?${qs}`,
   );
+}
+
+// ── Getit (Resy) ─────────────────────────────────────────
+
+function authRequest<T>(
+  path: string,
+  token: string,
+  init?: RequestInit,
+): Promise<T> {
+  return request<T>(path, {
+    ...init,
+    headers: { Authorization: `Bearer ${token}`, ...init?.headers },
+  });
+}
+
+export interface GetitUser {
+  id: string;
+  email: string;
+  is_admin: boolean;
+  resy_connected: boolean;
+  resy_token_updated_at: string | null;
+}
+
+export interface GetitLoginResponse {
+  token: string;
+  user: GetitUser;
+}
+
+export function getitLogin(
+  email: string,
+  password: string,
+): Promise<GetitLoginResponse> {
+  return request<GetitLoginResponse>("/getit/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export function getitMe(token: string): Promise<GetitUser> {
+  return authRequest<GetitUser>("/getit/me", token);
+}
+
+export function getitLogout(token: string): Promise<void> {
+  return authRequest<void>("/getit/logout", token, { method: "POST" });
+}
+
+export interface GetitVenue {
+  venue_id: number;
+  name: string;
+  region: string;
+  cuisine: string[];
+  price_range: number;
+  rating: number;
+  url_slug: string;
+  images: string[];
+}
+
+export function getitSearchVenues(
+  token: string,
+  query: string,
+  date: string,
+  partySize: number,
+): Promise<GetitVenue[]> {
+  const qs = new URLSearchParams({
+    query,
+    date,
+    party_size: String(partySize),
+  });
+  return authRequest<GetitVenue[]>(`/getit/search?${qs}`, token);
+}
+
+export interface GetitSlot {
+  time: string;
+  config_token: string;
+  type: string;
+  availability_id: number;
+}
+
+export function getitFetchSlots(
+  token: string,
+  venueId: number,
+  date: string,
+  partySize: number,
+): Promise<GetitSlot[]> {
+  const qs = new URLSearchParams({
+    date,
+    party_size: String(partySize),
+  });
+  return authRequest<GetitSlot[]>(
+    `/getit/venues/${venueId}/slots?${qs}`,
+    token,
+  );
+}
+
+export interface GetitBookResponse {
+  reservation_id: number;
+  details: Record<string, unknown>;
+}
+
+export function getitBook(
+  token: string,
+  data: {
+    venue_id: number;
+    config_token: string;
+    date: string;
+    party_size: number;
+  },
+): Promise<GetitBookResponse> {
+  return authRequest<GetitBookResponse>("/getit/book", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export interface GetitJobRun {
+  attempt: number;
+  action: string;
+  timestamp: string;
+  details: Record<string, unknown> | null;
+}
+
+export interface GetitJob {
+  id: string;
+  venue_name: string;
+  venue_id: number;
+  date: string;
+  desired_time: string;
+  party_size: number;
+  mode: string;
+  snipe_at: string | null;
+  poll_interval_seconds: number | null;
+  time_flex_minutes: number;
+  status: string;
+  attempts: number;
+  max_attempts: number;
+  last_attempt_at: string | null;
+  result: Record<string, unknown> | null;
+  runs: GetitJobRun[];
+  created_at: string;
+  updated_at: string;
+}
+
+export function getitCreateJob(
+  token: string,
+  data: {
+    venue_name: string;
+    venue_id: number;
+    date: string;
+    desired_time: string;
+    party_size: number;
+    mode: string;
+    snipe_at?: string;
+    poll_interval_seconds?: number;
+    time_flex_minutes?: number;
+    max_attempts?: number;
+  },
+): Promise<GetitJob> {
+  return authRequest<GetitJob>("/getit/jobs", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function getitListJobs(token: string): Promise<GetitJob[]> {
+  return authRequest<GetitJob[]>("/getit/jobs", token);
+}
+
+export function getitGetJob(token: string, jobId: string): Promise<GetitJob> {
+  return authRequest<GetitJob>(`/getit/jobs/${jobId}`, token);
+}
+
+export function getitCancelJob(
+  token: string,
+  jobId: string,
+): Promise<GetitJob> {
+  return authRequest<GetitJob>(`/getit/jobs/${jobId}`, token, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "cancelled" }),
+  });
+}
+
+export interface GetitActivity {
+  id: string;
+  user_id: string;
+  action: string;
+  details: Record<string, unknown> | null;
+  ip_address: string | null;
+  created_at: string;
+}
+
+export function getitFetchActivity(
+  token: string,
+  limit = 50,
+): Promise<GetitActivity[]> {
+  return authRequest<GetitActivity[]>(`/getit/activity?limit=${limit}`, token);
+}
+
+export interface GetitAdminUser {
+  id: string;
+  email: string;
+  is_admin: boolean;
+  is_active: boolean;
+  created_at: string;
+}
+
+export function getitAdminListUsers(token: string): Promise<GetitAdminUser[]> {
+  return authRequest<GetitAdminUser[]>("/getit/admin/users", token);
+}
+
+export interface GetitWorkerStatus {
+  resy_scheduler: boolean;
+}
+
+export function getitAdminWorkerStatus(
+  token: string,
+): Promise<GetitWorkerStatus> {
+  return authRequest<GetitWorkerStatus>("/getit/admin/workers", token);
+}
+
+export function getitAdminToggleWorker(
+  token: string,
+  data: { resy_scheduler: boolean },
+): Promise<GetitWorkerStatus> {
+  return authRequest<GetitWorkerStatus>("/getit/admin/workers", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function getitAdminUpdateUser(
+  token: string,
+  userId: string,
+  data: { is_admin?: boolean; is_active?: boolean },
+): Promise<GetitAdminUser> {
+  return authRequest<GetitAdminUser>(`/getit/admin/users/${userId}`, token, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
 }

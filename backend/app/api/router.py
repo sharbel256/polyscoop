@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from app.api.routes import (
     builder,
     copytrade,
+    getit,
     health,
     live,
     markets,
@@ -29,3 +30,4 @@ api_router.include_router(wallets.router)
 api_router.include_router(live.router)
 api_router.include_router(copytrade.router)
 api_router.include_router(signup.router)
+api_router.include_router(getit.router)

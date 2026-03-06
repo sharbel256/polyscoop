@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import setup_logging
 from app.core.middleware import CorrelationIdMiddleware
+from app.core.rate_limit import RateLimitMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,9 @@ async def lifespan(app: FastAPI):
     # from app.workers.manager import start_workers, stop_workers
     # await start_workers()
 
+    # Resy scheduler managed at runtime via admin API
+    app.state.resy_scheduler = None
+
     # Initialize shared httpx client
     from app.services.polymarket import get_client
 
@@ -112,7 +116,7 @@ app = FastAPI(
 # Exception handlers
 register_exception_handlers(app)
 
-# Middleware (applied in reverse order – correlation ID runs first)
+# Middleware (last added = outermost; correlation ID must be outermost)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -121,6 +125,7 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
     expose_headers=["X-Request-ID", "X-Response-Time"],
 )
+app.add_middleware(RateLimitMiddleware)
 app.add_middleware(CorrelationIdMiddleware)
 
 # API routes

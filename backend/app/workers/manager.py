@@ -28,6 +28,9 @@ async def start_workers() -> None:
     _tasks.append(
         asyncio.create_task(profile_image_fetcher.run_forever(), name="profile_image_fetcher")
     )
+    # Resy scheduler — currently paused with the rest of the workers
+    # from app.workers import resy_scheduler
+    # _tasks.append(asyncio.create_task(resy_scheduler.run_forever(), name="resy_scheduler"))
     logger.info("started %d workers", len(_tasks))
 
 

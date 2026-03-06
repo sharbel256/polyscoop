@@ -8,7 +8,7 @@ import {
 import "@rainbow-me/rainbowkit/styles.css";
 
 import { config } from "@/config/wagmi";
-import { useTheme } from "./ThemeProvider";
+import { useTheme } from "@/hooks/useTheme";
 
 const queryClient = new QueryClient({
   defaultOptions: {

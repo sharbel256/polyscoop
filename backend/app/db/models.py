@@ -8,6 +8,7 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     Float,
+    ForeignKey,
     Index,
     Integer,
     String,
@@ -193,10 +194,67 @@ class CopytradeExecution(Base):
 
 
 class User(Base):
-    """Users who signed up for updates."""
+    """Platform user account (authenticated via Resy)."""
 
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Mapped[str] = mapped_column(String(320), nullable=False, unique=True)
+    password_hash: Mapped[str] = mapped_column(String(256), nullable=False)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Resy-specific fields (encrypted at rest)
+    resy_jwt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    resy_legacy_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    payment_method_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    resy_token_updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class ResyJob(Base):
+    """Scheduled Resy booking attempt."""
+
+    __tablename__ = "resy_jobs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
+    )
+    venue_name: Mapped[str] = mapped_column(String(256), nullable=False)
+    venue_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    date: Mapped[str] = mapped_column(String(10), nullable=False)  # YYYY-MM-DD
+    desired_time: Mapped[str] = mapped_column(String(5), nullable=False)  # HH:MM
+    party_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    mode: Mapped[str] = mapped_column(String(8), nullable=False)  # snipe | poll
+    snipe_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    poll_interval_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    time_flex_minutes: Mapped[int] = mapped_column(Integer, default=0)
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer, default=50)
+    last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    result: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (Index("ix_resy_jobs_status", "status"),)
+
+
+class ActivityLog(Base):
+    """Tracks all user actions on the platform."""
+
+    __tablename__ = "activity_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
+    )
+    action: Mapped[str] = mapped_column(String(64), nullable=False)
+    details: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
