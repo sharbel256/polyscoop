@@ -27,6 +27,15 @@ def _error_body(
     }
 
 
+def _error_response(status: int, content: dict[str, Any]) -> JSONResponse:
+    """Create a JSONResponse with the X-Request-ID header attached."""
+    return JSONResponse(
+        status_code=status,
+        content=content,
+        headers={"X-Request-ID": correlation_id_ctx.get("-")},
+    )
+
+
 async def http_exception_handler(_request: Request, exc: HTTPException) -> JSONResponse:
     """Handle explicitly raised HTTPException (4xx / 5xx)."""
     if exc.status_code >= 500:
@@ -34,9 +43,9 @@ async def http_exception_handler(_request: Request, exc: HTTPException) -> JSONR
     else:
         logger.warning("http_error status=%d detail=%s", exc.status_code, exc.detail)
 
-    return JSONResponse(
-        status_code=exc.status_code,
-        content=_error_body(exc.status_code, exc.detail, error_type="http_error"),
+    return _error_response(
+        exc.status_code,
+        _error_body(exc.status_code, exc.detail, error_type="http_error"),
     )
 
 
@@ -46,18 +55,18 @@ async def validation_exception_handler(
     """Handle Pydantic / query-param validation failures (422)."""
     errors = exc.errors()
     logger.warning("validation_error errors=%s", errors)
-    return JSONResponse(
-        status_code=422,
-        content=_error_body(422, errors, error_type="validation_error"),
+    return _error_response(
+        422,
+        _error_body(422, errors, error_type="validation_error"),
     )
 
 
 async def unhandled_exception_handler(_request: Request, exc: Exception) -> JSONResponse:
     """Catch-all for unhandled exceptions – log full traceback, return 500."""
     logger.exception("unhandled_exception %s: %s", type(exc).__name__, exc)
-    return JSONResponse(
-        status_code=500,
-        content=_error_body(500, "Internal server error", error_type="internal_error"),
+    return _error_response(
+        500,
+        _error_body(500, "Internal server error", error_type="internal_error"),
     )
 
 

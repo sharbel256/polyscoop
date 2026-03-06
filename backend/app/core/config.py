@@ -42,5 +42,12 @@ class Settings:
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     MENTIONS_TAG_SLUG = os.getenv("MENTIONS_TAG_SLUG", "mention-markets")
 
+    # ── Auth & Encryption ────────────────────────────────
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "change-me-in-production")
+    # generate FERNET_KEY via: python -c "from cryptography.fernet import Fernet; ..."
+    FERNET_KEY = os.getenv("FERNET_KEY", "")
+    RATE_LIMIT_PER_USER = int(os.getenv("RATE_LIMIT_PER_USER", "30"))
+    RATE_LIMIT_GLOBAL = int(os.getenv("RATE_LIMIT_GLOBAL", "200"))
+
 
 settings = Settings()

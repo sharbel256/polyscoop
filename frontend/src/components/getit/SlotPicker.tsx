@@ -1,0 +1,254 @@
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  getitFetchSlots,
+  getitBook,
+  type GetitSlot,
+  type GetitVenue,
+} from "@/lib/api";
+
+export interface SnipeRequest {
+  desired_time: string;
+  mode: "snipe" | "poll";
+  snipe_at: string | null;
+  poll_interval_seconds: number | null;
+  time_flex_minutes: number;
+  max_attempts: number;
+}
+
+interface SlotPickerProps {
+  venue: GetitVenue;
+  date: string;
+  partySize: number;
+  onBooked: (reservationId: number) => void;
+  onSchedule: (req: SnipeRequest) => void;
+  disabled?: boolean;
+}
+
+export function SlotPicker({
+  venue,
+  date,
+  partySize,
+  onBooked,
+  onSchedule,
+  disabled,
+}: SlotPickerProps) {
+  const { token } = useAuth();
+  const [slots, setSlots] = useState<GetitSlot[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [booking, setBooking] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  // snipe form state
+  const [desiredTime, setDesiredTime] = useState("19:00");
+  const [mode, setMode] = useState<"snipe" | "poll">("snipe");
+  const [snipeAt, setSnipeAt] = useState("");
+  const [pollInterval, setPollInterval] = useState(60);
+  const [flexEnabled, setFlexEnabled] = useState(false);
+  const [scheduling, setScheduling] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    setLoading(true);
+    setError("");
+    getitFetchSlots(token, venue.venue_id, date, partySize)
+      .then(setSlots)
+      .catch((err) => setError(err instanceof Error ? err.message : "failed"))
+      .finally(() => setLoading(false));
+  }, [token, venue.venue_id, date, partySize]);
+
+  async function handleBook(slot: GetitSlot) {
+    if (!token) return;
+    setBooking(slot.config_token);
+    setError("");
+    try {
+      const res = await getitBook(token, {
+        venue_id: venue.venue_id,
+        config_token: slot.config_token,
+        date,
+        party_size: partySize,
+      });
+      onBooked(res.reservation_id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "booking failed");
+    } finally {
+      setBooking(null);
+    }
+  }
+
+  function handleScheduleSubmit() {
+    setScheduling(true);
+    onSchedule({
+      desired_time: desiredTime,
+      mode,
+      snipe_at:
+        mode === "snipe" && snipeAt ? new Date(snipeAt).toISOString() : null,
+      poll_interval_seconds: mode === "poll" ? pollInterval : null,
+      time_flex_minutes: flexEnabled ? 60 : 0,
+      max_attempts: mode === "snipe" ? 20 : 50,
+    });
+    setScheduling(false);
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* available slots */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-body font-medium text-foreground">
+            available slots
+          </h3>
+          <span className="text-caption text-foreground/60">
+            {loading ? "..." : `${slots.length} found`}
+          </span>
+        </div>
+
+        {error && (
+          <div className="rounded-lg bg-loss/10 px-3 py-2 text-caption text-loss">
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="py-6 text-center text-caption text-foreground/60">
+            loading slots...
+          </div>
+        ) : slots.length === 0 ? (
+          <p className="text-caption text-foreground/50">
+            no slots available — schedule a snipe below
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+            {slots.map((slot) => (
+              <div
+                key={slot.config_token}
+                className="card flex flex-col items-center gap-2 p-3"
+              >
+                <span className="text-body font-semibold text-foreground">
+                  {slot.time.slice(0, 5)}
+                </span>
+                <span className="text-micro text-foreground/50">
+                  {slot.type}
+                </span>
+                <button
+                  onClick={() => handleBook(slot)}
+                  disabled={booking === slot.config_token}
+                  className="btn-primary px-3 py-1 text-micro"
+                >
+                  {booking === slot.config_token ? "..." : "book"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* schedule a snipe */}
+      <div className="border-t border-white/10 pt-4">
+        <h3 className="mb-3 text-body font-medium text-foreground">
+          schedule a snipe
+        </h3>
+        <div className="space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex-1">
+              <label className="mb-1 block text-micro text-foreground/50">
+                desired time
+              </label>
+              <input
+                type="time"
+                value={desiredTime}
+                onChange={(e) => setDesiredTime(e.target.value)}
+                className="input w-full"
+              />
+              <button
+                type="button"
+                onClick={() => setFlexEnabled((v) => !v)}
+                className={`mt-1.5 rounded-full px-2.5 py-0.5 text-micro transition-colors ${
+                  flexEnabled
+                    ? "bg-brand-500/20 text-brand-400"
+                    : "bg-white/5 text-foreground/40 hover:bg-white/10"
+                }`}
+              >
+                {flexEnabled ? "± 1 hour" : "exact time"}
+              </button>
+            </div>
+            <div className="flex-1">
+              <label className="mb-1 block text-micro text-foreground/50">
+                mode
+              </label>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setMode("snipe")}
+                  className={`flex-1 rounded-lg px-3 py-2 text-caption transition-colors ${
+                    mode === "snipe"
+                      ? "bg-brand-500/20 text-brand-400"
+                      : "bg-white/5 text-foreground/60 hover:bg-white/10"
+                  }`}
+                >
+                  snipe
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode("poll")}
+                  className={`flex-1 rounded-lg px-3 py-2 text-caption transition-colors ${
+                    mode === "poll"
+                      ? "bg-brand-500/20 text-brand-400"
+                      : "bg-white/5 text-foreground/60 hover:bg-white/10"
+                  }`}
+                >
+                  poll
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {mode === "snipe" && (
+            <div>
+              <label className="mb-1 block text-micro text-foreground/50">
+                snipe at (when reservations open)
+              </label>
+              <input
+                type="datetime-local"
+                value={snipeAt}
+                onChange={(e) => setSnipeAt(e.target.value)}
+                className="input w-full"
+              />
+            </div>
+          )}
+
+          {mode === "poll" && (
+            <div>
+              <label className="mb-1 block text-micro text-foreground/50">
+                check every
+              </label>
+              <select
+                value={pollInterval}
+                onChange={(e) => setPollInterval(Number(e.target.value))}
+                className="input w-full"
+              >
+                <option value={30}>30 seconds</option>
+                <option value={60}>1 minute</option>
+                <option value={300}>5 minutes</option>
+                <option value={900}>15 minutes</option>
+                <option value={1800}>30 minutes</option>
+              </select>
+            </div>
+          )}
+
+          <button
+            onClick={handleScheduleSubmit}
+            disabled={scheduling || !desiredTime || disabled}
+            className="btn-primary w-full"
+          >
+            {disabled
+              ? "cancel active job first"
+              : scheduling
+                ? "scheduling..."
+                : "schedule job"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

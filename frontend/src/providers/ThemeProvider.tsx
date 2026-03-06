@@ -1,6 +1,5 @@
 import {
   createContext,
-  useContext,
   useEffect,
   useState,
   useCallback,
@@ -10,7 +9,7 @@ import {
 export type Theme = "light" | "dark" | "system";
 type ResolvedTheme = "light" | "dark";
 
-interface ThemeContextValue {
+export interface ThemeContextValue {
   theme: Theme;
   resolvedTheme: ResolvedTheme;
   setTheme: (t: Theme) => void;
@@ -18,7 +17,7 @@ interface ThemeContextValue {
 
 const STORAGE_KEY = "polyscoop-theme";
 
-const ThemeContext = createContext<ThemeContextValue | null>(null);
+export const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === "undefined") return "dark";
@@ -77,10 +76,4 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       {children}
     </ThemeContext.Provider>
   );
-}
-
-export function useTheme() {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
-  return ctx;
 }

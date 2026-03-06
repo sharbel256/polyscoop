@@ -35,7 +35,7 @@ async def signup_for_updates(
     if existing.scalar_one_or_none():
         return SignupResponse(ok=True, message="you're already signed up!")
 
-    user = User(email=email)
+    user = User(email=email, password_hash="")
     session.add(user)
     await session.commit()
 
