@@ -7,7 +7,6 @@ from datetime import UTC, datetime
 
 from sqlalchemy import select
 
-from app.core.encryption import decrypt
 from app.db.engine import async_session
 from app.db.models import ActivityLog, ResyJob, User
 from app.services import resy
@@ -55,7 +54,8 @@ def _find_best_slot(slots: list[dict], desired_time: str, flex_minutes: int) -> 
 
 async def _attempt_booking(job: ResyJob, user: User) -> dict | None:
     """Try to find a matching slot and book it. Returns confirmation or None."""
-    jwt_token = decrypt(user.resy_jwt)  # type: ignore[arg-type]
+    assert user.resy_jwt is not None  # caller checks resy_jwt
+    jwt_token = user.resy_jwt
 
     slots = await resy.find_slots(job.venue_id, job.date, job.party_size)
     flex = job.time_flex_minutes or 0

@@ -10,7 +10,6 @@ dependencies = [
     "httpx",
     "python-jose[cryptography]",
     "bcrypt",
-    "cryptography",
     "pydantic[email]",
     "py-clob-client",
     "python-dotenv",
