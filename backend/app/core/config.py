@@ -44,8 +44,9 @@ class Settings:
     MENTIONS_TAG_SLUG = os.getenv("MENTIONS_TAG_SLUG", "mention-markets")
 
     # ── Auth ──────────────────────────────────────────────
-    # Random per-process secret — sessions reset on restart (acceptable)
-    JWT_SECRET_KEY = secrets.token_urlsafe(32)
+    # In dev use a stable secret so sessions survive restarts;
+    # in production a random secret is generated each startup.
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY") or secrets.token_urlsafe(32)
     RATE_LIMIT_PER_USER = int(os.getenv("RATE_LIMIT_PER_USER", "30"))
     RATE_LIMIT_GLOBAL = int(os.getenv("RATE_LIMIT_GLOBAL", "200"))
 
