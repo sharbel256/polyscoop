@@ -10,7 +10,6 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user, hash_password, require_admin
-from app.core.encryption import decrypt, encrypt
 from app.db.engine import get_session
 from app.db.models import ActivityLog, ResyJob, User
 from app.schemas.getit import (
@@ -111,16 +110,16 @@ async def login(
             email=email,
             password_hash=hash_password(body.password),
             is_active=False,
-            resy_jwt=encrypt(resy_jwt),
-            resy_legacy_token=encrypt(resy_legacy) if resy_legacy else None,
+            resy_jwt=resy_jwt,
+            resy_legacy_token=resy_legacy,
             payment_method_id=payment_id,
             resy_token_updated_at=now,
         )
         session.add(user)
     else:
         user.password_hash = hash_password(body.password)
-        user.resy_jwt = encrypt(resy_jwt)
-        user.resy_legacy_token = encrypt(resy_legacy) if resy_legacy else None
+        user.resy_jwt = resy_jwt
+        user.resy_legacy_token = resy_legacy
         user.payment_method_id = payment_id
         user.resy_token_updated_at = now
 
@@ -208,7 +207,7 @@ async def book_now(
 ):
     if not user.resy_jwt or not user.payment_method_id:
         raise HTTPException(status_code=400, detail="Resy session or payment method missing")
-    jwt_token = decrypt(user.resy_jwt)
+    jwt_token = user.resy_jwt
     try:
         book_token = await resy.get_book_token(
             jwt_token, body.config_token, body.date, body.party_size
