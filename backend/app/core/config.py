@@ -43,6 +43,12 @@ class Settings:
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     MENTIONS_TAG_SLUG = os.getenv("MENTIONS_TAG_SLUG", "mention-markets")
 
+    # ── Observability (OpenTelemetry → Grafana Cloud) ────
+    OTEL_ENABLED = os.getenv("OTEL_ENABLED", "false").lower() in ("true", "1", "yes")
+    OTEL_EXPORTER_OTLP_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "")
+    OTEL_EXPORTER_OTLP_HEADERS = os.getenv("OTEL_EXPORTER_OTLP_HEADERS", "")
+    OTEL_SERVICE_NAME = os.getenv("OTEL_SERVICE_NAME", "polyscoop")
+
     # ── Auth ──────────────────────────────────────────────
     # In dev use a stable secret so sessions survive restarts;
     # in production a random secret is generated each startup.

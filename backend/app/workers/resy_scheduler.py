@@ -10,6 +10,7 @@ from sqlalchemy import select
 from app.db.engine import async_session
 from app.db.models import ActivityLog, ResyJob, User
 from app.services import resy
+from app.services.resy_token import ResyTokenExpired, ensure_fresh_resy_token
 
 
 def _utcnow() -> datetime:
@@ -78,8 +79,25 @@ async def _process_job(job: ResyJob) -> None:
     async with async_session() as session:
         result = await session.execute(select(User).where(User.id == job.user_id))
         user = result.scalar_one_or_none()
-        if user is None or not user.resy_jwt:
-            logger.warning("job %s: user missing or no resy token", job.id)
+        if user is None:
+            logger.warning("job %s: user missing", job.id)
+            return
+
+        try:
+            await ensure_fresh_resy_token(user, session)
+        except ResyTokenExpired:
+            logger.warning("job %s: resy token expired, marking failed", job.id)
+            job.status = "failed"
+            job.result = {"error": "resy_token_expired"}
+            session.add(
+                ActivityLog(
+                    user_id=user.id,
+                    action="book_failed",
+                    details={"job_id": str(job.id), "error": "resy_token_expired"},
+                )
+            )
+            await session.merge(job)
+            await session.commit()
             return
 
         now = _utcnow()

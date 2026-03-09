@@ -1,7 +1,9 @@
 """Async Resy API service using httpx."""
 
+import base64
 import json
 import logging
+import time
 import urllib.parse
 
 import httpx
@@ -10,7 +12,27 @@ logger = logging.getLogger(__name__)
 
 API_KEY = "VbWk7s3L4KiK5fzlO7JD3Q5EYolJI7n5"
 BASE_URL = "https://api.resy.com"
-BASE_HEADERS = {"authorization": f'ResyAPI api_key="{API_KEY}"'}
+BASE_HEADERS = {
+    "authorization": f'ResyAPI api_key="{API_KEY}"',
+    "accept": "application/json, text/plain, */*",
+    "accept-language": "en-US,en;q=0.7",
+    "cache-control": "no-cache",
+    "origin": "https://resy.com",
+    "referer": "https://resy.com/",
+    "x-origin": "https://resy.com",
+    "user-agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/145.0.0.0 Safari/537.36"
+    ),
+    "sec-ch-ua": '"Not:A-Brand";v="99", "Brave";v="145", "Chromium";v="145"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"macOS"',
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-site",
+    "sec-gpc": "1",
+}
 GEO = {"latitude": 41.8827, "longitude": -87.6233, "radius": 40250}
 
 _client: httpx.AsyncClient | None = None
@@ -38,8 +60,8 @@ def _auth_headers(jwt_token: str) -> dict[str, str]:
     return {"x-resy-auth-token": jwt_token, "x-resy-universal-auth": jwt_token}
 
 
-async def authenticate(email: str, password: str) -> tuple[str, str]:
-    """Authenticate with Resy. Returns (jwt_token, legacy_token)."""
+async def authenticate(email: str, password: str) -> tuple[str, str, str | None]:
+    """Authenticate with Resy. Returns (jwt_token, legacy_token, refresh_token)."""
     client = get_client()
     resp = await client.post(
         "/4/auth/password",
@@ -52,7 +74,49 @@ async def authenticate(email: str, password: str) -> tuple[str, str]:
     legacy = data.get("legacy_token", "")
     if not token:
         raise ValueError("Authentication failed: no token returned")
-    return token, legacy
+    refresh = resp.cookies.get("production_refresh_token")
+    return token, legacy, refresh
+
+
+async def refresh_access_token(refresh_token: str) -> tuple[str, str | None]:
+    """Exchange a refresh token for a new access token.
+
+    Returns (new_access_token, new_refresh_token_or_none).
+    """
+    client = get_client()
+    resp = await client.post(
+        "/3/auth/refresh",
+        cookies={"production_refresh_token": refresh_token},
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    new_access = data.get("token")
+    if not new_access:
+        raise ValueError("Refresh failed: no token returned")
+    new_refresh = resp.cookies.get("production_refresh_token")
+    return new_access, new_refresh
+
+
+def decode_jwt_exp(token: str) -> int | None:
+    """Decode the exp claim from a JWT without verification. Returns epoch or None."""
+    try:
+        payload_b64 = token.split(".")[1]
+        # Add padding
+        padding = 4 - len(payload_b64) % 4
+        if padding != 4:
+            payload_b64 += "=" * padding
+        payload = json.loads(base64.urlsafe_b64decode(payload_b64))
+        return payload.get("exp")
+    except Exception:
+        return None
+
+
+def is_token_expired(token: str, buffer_seconds: int = 3600) -> bool:
+    """Check if a JWT expires within buffer_seconds from now."""
+    exp = decode_jwt_exp(token)
+    if exp is None:
+        return True  # treat malformed as expired
+    return time.time() + buffer_seconds >= exp
 
 
 async def get_payment_method(jwt_token: str) -> int:
