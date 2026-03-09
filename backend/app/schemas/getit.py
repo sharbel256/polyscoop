@@ -21,7 +21,6 @@ class LoginResponse(BaseModel):
 class UserProfile(BaseModel):
     id: uuid.UUID
     email: str
-    is_admin: bool
     resy_connected: bool
     resy_token_updated_at: datetime | None
 

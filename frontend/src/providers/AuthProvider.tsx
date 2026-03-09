@@ -16,9 +16,17 @@ const TOKEN_KEY = "getit_token";
 export interface AuthUser {
   id: string;
   email: string;
-  is_admin: boolean;
   resy_connected: boolean;
   resy_token_updated_at: string | null;
+}
+
+function parseJwtAdmin(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return !!payload.admin;
+  } catch {
+    return false;
+  }
 }
 
 export interface AuthContextValue {
@@ -97,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       token,
       user,
       isAuthenticated: !!token && !!user,
-      isAdmin: !!user?.is_admin,
+      isAdmin: !!token && parseJwtAdmin(token),
       loading,
       login,
       logout,

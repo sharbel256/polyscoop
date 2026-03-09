@@ -44,7 +44,7 @@ export function SlotPicker({
   const [mode, setMode] = useState<"snipe" | "poll">("snipe");
   const [snipeAt, setSnipeAt] = useState("");
   const [pollInterval, setPollInterval] = useState(60);
-  const [flexEnabled, setFlexEnabled] = useState(false);
+  const [flexEnabled, setFlexEnabled] = useState(true);
   const [scheduling, setScheduling] = useState(false);
 
   useEffect(() => {

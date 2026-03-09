@@ -14,7 +14,7 @@ from app.db.engine import get_session
 from app.db.models import User
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_HOURS = 24
+ACCESS_TOKEN_EXPIRE_HOURS = 24 * 7  # 1 week
 
 
 def hash_password(plain: str) -> str:

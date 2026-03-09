@@ -48,9 +48,7 @@ def setup_telemetry(app) -> Callable[[], None] | None:  # noqa: ANN001
     # ── Traces ────────────────────────────────────────────
     tracer_provider = TracerProvider(resource=resource)
     tracer_provider.add_span_processor(
-        BatchSpanProcessor(
-            OTLPSpanExporter(endpoint=f"{endpoint}/v1/traces", headers=headers)
-        )
+        BatchSpanProcessor(OTLPSpanExporter(endpoint=f"{endpoint}/v1/traces", headers=headers))
     )
     trace.set_tracer_provider(tracer_provider)
 
@@ -65,9 +63,7 @@ def setup_telemetry(app) -> Callable[[], None] | None:  # noqa: ANN001
     # ── Logs ──────────────────────────────────────────────
     logger_provider = LoggerProvider(resource=resource)
     logger_provider.add_log_record_processor(
-        BatchLogRecordProcessor(
-            OTLPLogExporter(endpoint=f"{endpoint}/v1/logs", headers=headers)
-        )
+        BatchLogRecordProcessor(OTLPLogExporter(endpoint=f"{endpoint}/v1/logs", headers=headers))
     )
     otel_handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
     logging.getLogger().addHandler(otel_handler)
