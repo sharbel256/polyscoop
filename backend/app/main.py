@@ -53,6 +53,11 @@ _run_migrations()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
+
+    from app.core.telemetry import setup_telemetry
+
+    otel_shutdown = setup_telemetry(app)
+
     logger.info("polyscoop starting up")
 
     from app.db.engine import engine
@@ -95,6 +100,8 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("polyscoop shutting down")
+    if otel_shutdown:
+        otel_shutdown()
     # await stop_workers()
 
     from app.services.polymarket import close_client

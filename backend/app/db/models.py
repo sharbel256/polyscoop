@@ -206,6 +206,7 @@ class User(Base):
     # Resy-specific fields (encrypted at rest)
     resy_jwt: Mapped[str | None] = mapped_column(Text, nullable=True)
     resy_legacy_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    resy_refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
     payment_method_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     resy_token_updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

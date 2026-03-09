@@ -48,6 +48,16 @@ class CorrelationIdMiddleware:
         cid = _safe_correlation_id(raw_cid)
         correlation_id_ctx.set(cid)
 
+        # Link correlation ID to the active OTEL span (if tracing is enabled)
+        try:
+            from opentelemetry import trace
+
+            span = trace.get_current_span()
+            if span.is_recording():
+                span.set_attribute("request.id", cid)
+        except Exception:
+            pass
+
         request = Request(scope)
         method = request.method
         path = request.url.path
