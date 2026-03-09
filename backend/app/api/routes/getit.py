@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import get_current_user, require_admin
+from app.core.auth import get_current_user, hash_password, require_admin, verify_password
 from app.db.engine import get_session
 from app.db.models import ActivityLog, ResyJob, User
 from app.schemas.getit import (
@@ -86,8 +86,32 @@ async def login(
     request: Request,
     session: AsyncSession = Depends(get_session),
 ):
-    """Authenticate via Resy, upsert platform user, return platform JWT."""
-    # 1. Authenticate with Resy API
+    """Authenticate via Resy, upsert platform user, return platform JWT.
+
+    If the user already has a valid (non-expired) Resy token and a stored
+    password hash, we verify locally and skip the Resy API call entirely.
+    """
+    email = body.email.lower()
+    result = await session.execute(select(User).where(func.lower(User.email) == email))
+    user = result.scalar_one_or_none()
+    now = datetime.now(UTC).replace(tzinfo=None)
+
+    # Fast path: reuse existing Resy token if still valid
+    if (
+        user is not None
+        and user.password_hash
+        and verify_password(body.password, user.password_hash)
+        and user.resy_jwt
+        and not resy.is_token_expired(user.resy_jwt)
+    ):
+        await _log_activity(session, user.id, "login", ip=_client_ip(request))
+        await session.commit()
+        if not user.is_active:
+            raise HTTPException(status_code=403, detail="account pending admin approval")
+        token = _create_access_token(user)
+        return LoginResponse(token=token, user=_user_profile(user))
+
+    # Slow path: authenticate with Resy API
     try:
         resy_jwt, resy_legacy, resy_refresh = await resy.authenticate(body.email, body.password)
     except Exception as exc:
@@ -96,22 +120,17 @@ async def login(
             detail=f"Resy authentication failed: {exc}",
         ) from exc
 
-    # 2. Fetch payment method
     try:
         payment_id = await resy.get_payment_method(resy_jwt)
     except Exception:
         payment_id = None
 
-    # 3. Upsert platform user (case-insensitive email match)
-    email = body.email.lower()
-    result = await session.execute(select(User).where(func.lower(User.email) == email))
-    user = result.scalar_one_or_none()
-    now = datetime.now(UTC).replace(tzinfo=None)
+    pw_hash = hash_password(body.password)
 
     if user is None:
         user = User(
             email=email,
-            password_hash="",
+            password_hash=pw_hash,
             is_active=False,
             resy_jwt=resy_jwt,
             resy_legacy_token=resy_legacy,
@@ -121,6 +140,7 @@ async def login(
         )
         session.add(user)
     else:
+        user.password_hash = pw_hash
         user.resy_jwt = resy_jwt
         user.resy_legacy_token = resy_legacy
         user.resy_refresh_token = resy_refresh
