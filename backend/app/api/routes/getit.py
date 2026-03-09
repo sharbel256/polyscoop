@@ -66,7 +66,6 @@ def _user_profile(user: User) -> UserProfile:
     return UserProfile(
         id=user.id,
         email=user.email,
-        is_admin=user.is_admin,
         resy_connected=user.resy_jwt is not None,
         resy_token_updated_at=_as_utc(user.resy_token_updated_at),
     )

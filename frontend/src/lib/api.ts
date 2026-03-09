@@ -540,7 +540,6 @@ function authRequest<T>(
 export interface GetitUser {
   id: string;
   email: string;
-  is_admin: boolean;
   resy_connected: boolean;
   resy_token_updated_at: string | null;
 }
