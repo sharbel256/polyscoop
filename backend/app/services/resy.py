@@ -255,5 +255,5 @@ async def book_reservation(jwt_token: str, book_token: str, payment_method_id: i
     resp.raise_for_status()
     data = resp.json()
     if not data.get("reservation_id"):
-        raise ValueError(f"Booking returned no reservation_id: {data}")
+        raise ValueError("Booking returned no reservation_id")
     return data
