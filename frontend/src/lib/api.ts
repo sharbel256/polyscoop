@@ -686,7 +686,7 @@ export function getitCreateJob(
 
 export function getitStats(
   token: string,
-): Promise<{ pending: number; active: number }> {
+): Promise<{ pending: number; active: number; scheduler_active: boolean }> {
   return authRequest("/getit/stats", token);
 }
 

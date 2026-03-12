@@ -23,11 +23,13 @@ export function GetitDashboard() {
   const [partySize, setPartySize] = useState(2);
   const [selectedVenue, setSelectedVenue] = useState<GetitVenue | null>(null);
   const [booked, setBooked] = useState<number | null>(null);
+  const [slotsExpanded, setSlotsExpanded] = useState(true);
 
   // stats
   const [stats, setStats] = useState<{
     pending: number;
     active: number;
+    scheduler_active: boolean;
   } | null>(null);
 
   // jobs
@@ -57,6 +59,11 @@ export function GetitDashboard() {
     return () => clearInterval(id);
   }, [hasActiveJob, loadJobs]);
 
+  // auto-collapse slots when a job starts, expand when it clears
+  useEffect(() => {
+    setSlotsExpanded(!hasActiveJob);
+  }, [hasActiveJob]);
+
   // schedule job from slot picker
   async function handleSchedule(req: SnipeRequest) {
     if (!token || !selectedVenue) return;
@@ -81,28 +88,48 @@ export function GetitDashboard() {
 
   return (
     <div className="space-y-8">
-      {/* resy session status */}
+      {/* status bar */}
       {user && (
         <div className="card p-4">
-          <div className="flex items-center gap-3">
-            <div
-              className={`h-2 w-2 rounded-full ${user.resy_connected ? "bg-gain" : "bg-loss"}`}
-            />
-            <span className="text-caption text-foreground/60">
-              {user.resy_connected ? "resy connected" : "resy disconnected"} —{" "}
-              {user.email}
-            </span>
-            {user.resy_token_updated_at && (
-              <span className="text-micro text-foreground/40">
-                token refreshed{" "}
-                {new Date(user.resy_token_updated_at).toLocaleString("en-US", {
-                  timeZone: "America/Chicago",
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <div
+                className={`h-2 w-2 rounded-full ${user.resy_connected ? "bg-gain" : "bg-loss"}`}
+              />
+              <span className="text-caption text-foreground/60">
+                {user.resy_connected ? "resy connected" : "resy disconnected"}
               </span>
+              {user.resy_token_updated_at && (
+                <span className="text-micro text-foreground/40">
+                  refreshed token{" "}
+                  {new Date(user.resy_token_updated_at).toLocaleString(
+                    "en-US",
+                    {
+                      timeZone: "America/Chicago",
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    },
+                  )}
+                </span>
+              )}
+            </div>
+            {stats && (
+              <div className="flex items-center gap-2">
+                <div
+                  className={`h-2 w-2 rounded-full ${stats.scheduler_active ? "bg-gain" : "bg-loss"}`}
+                />
+                <span className="text-caption text-foreground/60">
+                  scheduler {stats.scheduler_active ? "active" : "inactive"}
+                </span>
+                {(stats.pending > 0 || stats.active > 0) && (
+                  <span className="text-micro text-foreground/40">
+                    {stats.pending} pending {stats.active} running - across all
+                    users
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -125,8 +152,12 @@ export function GetitDashboard() {
 
       {/* slots */}
       {selectedVenue && !booked && (
-        <div className="card overflow-hidden p-4">
-          <div className="mb-4 flex items-center gap-3">
+        <div className="card p-4">
+          <button
+            type="button"
+            onClick={() => setSlotsExpanded((v) => !v)}
+            className="flex w-full items-center gap-3"
+          >
             {selectedVenue.images[0] && (
               <img
                 src={selectedVenue.images[0]}
@@ -134,7 +165,7 @@ export function GetitDashboard() {
                 className="h-10 w-10 rounded-md object-cover"
               />
             )}
-            <div>
+            <div className="text-left">
               <h3 className="text-body font-semibold text-foreground">
                 {selectedVenue.name}
               </h3>
@@ -144,18 +175,36 @@ export function GetitDashboard() {
                   ` · ${selectedVenue.cuisine.join(", ")}`}
               </p>
             </div>
-          </div>
-          <SlotPicker
-            venue={selectedVenue}
-            date={date}
-            partySize={partySize}
-            onBooked={(id) => {
-              setBooked(id);
-              loadJobs();
-            }}
-            onSchedule={handleSchedule}
-            disabled={hasActiveJob}
-          />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={`ml-auto text-foreground/30 transition-transform ${slotsExpanded ? "rotate-180" : ""}`}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+          {slotsExpanded && (
+            <div className="mt-4">
+              <SlotPicker
+                venue={selectedVenue}
+                date={date}
+                partySize={partySize}
+                onBooked={(id) => {
+                  setBooked(id);
+                  loadJobs();
+                }}
+                onSchedule={handleSchedule}
+                disabled={hasActiveJob}
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -176,12 +225,6 @@ export function GetitDashboard() {
         <div>
           <div className="mb-3 flex items-center gap-2">
             <h2 className="text-h3 text-foreground">your jobs</h2>
-            {stats && (stats.pending > 0 || stats.active > 0) && (
-              <span className="text-micro text-foreground/30">
-                {stats.pending} pending · {stats.active} running across all
-                users
-              </span>
-            )}
             <div className="flex-1" />
             <button
               onClick={loadJobs}

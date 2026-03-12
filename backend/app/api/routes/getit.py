@@ -289,14 +289,17 @@ async def book_now(
 
 @router.get("/stats")
 async def job_stats(
+    request: Request,
     _user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     result = await session.execute(select(ResyJob.status, func.count()).group_by(ResyJob.status))
     counts: dict[str, int] = {row[0]: row[1] for row in result.all()}
+    task = request.app.state.resy_scheduler
     return {
         "pending": counts.get("pending", 0),
         "active": counts.get("active", 0),
+        "scheduler_active": task is not None and not task.done(),
     }
 
 
