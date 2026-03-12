@@ -108,26 +108,24 @@ export function GetitDashboard() {
         </div>
       )}
 
-      {/* search — hidden when a job is pending/active */}
-      {!hasActiveJob && (
-        <div className="card p-4">
-          <h2 className="mb-4 text-h3 text-foreground">find a table</h2>
-          <VenueSearch
-            date={date}
-            partySize={partySize}
-            onSelectVenue={(v) => {
-              setSelectedVenue(v);
-              setBooked(null);
-            }}
-            onDateChange={setDate}
-            onPartySizeChange={setPartySize}
-          />
-        </div>
-      )}
+      {/* search */}
+      <div className="card p-4">
+        <h2 className="mb-4 text-h3 text-foreground">find a table</h2>
+        <VenueSearch
+          date={date}
+          partySize={partySize}
+          onSelectVenue={(v) => {
+            setSelectedVenue(v);
+            setBooked(null);
+          }}
+          onDateChange={setDate}
+          onPartySizeChange={setPartySize}
+        />
+      </div>
 
       {/* slots */}
-      {selectedVenue && !booked && !hasActiveJob && (
-        <div className="card p-4">
+      {selectedVenue && !booked && (
+        <div className="card overflow-hidden p-4">
           <div className="mb-4 flex items-center gap-3">
             {selectedVenue.images[0] && (
               <img

@@ -184,12 +184,19 @@ async def find_slots(venue_id: int, date: str, party_size: int) -> list[dict]:
             "venue_id": venue_id,
         },
     )
-    # Resy returns 500 when there's no availability — treat as empty
     if resp.status_code >= 500:
-        return []
+        body = resp.text
+        logger.warning("Resy /4/find returned %s: %s", resp.status_code, body[:500])
+        raise ValueError(f"Resy returned {resp.status_code}")
     resp.raise_for_status()
 
-    raw_slots = resp.json().get("results", {}).get("venues", [{}])[0].get("slots", [])
+    data = resp.json()
+    venues = data.get("results", {}).get("venues", [])
+    if not venues:
+        logger.info("Resy /4/find: no venues in response for venue_id=%s", venue_id)
+        return []
+    raw_slots = venues[0].get("slots", [])
+    logger.info("Resy /4/find: %d raw slots for venue_id=%s", len(raw_slots), venue_id)
     slots = []
     for s in raw_slots:
         avail_id = s.get("availability", {}).get("id", 0)
