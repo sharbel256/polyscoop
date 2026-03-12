@@ -61,8 +61,14 @@ export function SlotPicker({
     setLoading(true);
     setError("");
     getitFetchSlots(token, venue.venue_id, date, partySize)
-      .then(setSlots)
-      .catch((err) => setError(err instanceof Error ? err.message : "failed"))
+      .then((res) => {
+        console.log("[SlotPicker] fetched slots:", res);
+        setSlots(res);
+      })
+      .catch((err) => {
+        console.error("[SlotPicker] error:", err);
+        setError(err instanceof Error ? err.message : "failed");
+      })
       .finally(() => setLoading(false));
   }, [token, venue.venue_id, date, partySize]);
 
@@ -160,7 +166,7 @@ export function SlotPicker({
         </h3>
         <div className="space-y-3">
           <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <label className="mb-1 block text-micro text-foreground/50">
                 desired time
               </label>
@@ -168,7 +174,7 @@ export function SlotPicker({
                 type="time"
                 value={desiredTime}
                 onChange={(e) => setDesiredTime(e.target.value)}
-                className="input w-full"
+                className="input min-w-0"
               />
               <div className="mt-1.5 flex items-center gap-1">
                 <button
@@ -201,7 +207,7 @@ export function SlotPicker({
                 ))}
               </div>
             </div>
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <label className="mb-1 block text-micro text-foreground/50">
                 mode
               </label>
@@ -233,7 +239,7 @@ export function SlotPicker({
           </div>
 
           {mode === "snipe" && (
-            <div>
+            <div className="min-w-0">
               <label className="mb-1 block text-micro text-foreground/50">
                 snipe at (when reservations open)
               </label>
@@ -241,7 +247,7 @@ export function SlotPicker({
                 type="datetime-local"
                 value={snipeAt}
                 onChange={(e) => setSnipeAt(e.target.value)}
-                className="input w-full"
+                className="input min-w-0"
               />
             </div>
           )}
