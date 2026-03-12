@@ -5,6 +5,7 @@ import logging
 import uuid
 from datetime import UTC, datetime
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -77,6 +78,19 @@ def _create_access_token(user: User) -> str:
     return create_access_token(user.id, user.is_admin)
 
 
+def _safe_resy_error(exc: Exception) -> str:
+    """Return a user-safe error message from a Resy exception.
+
+    For HTTP errors, only the status code and reason phrase are exposed.
+    Internal response bodies and stack details are never returned to callers.
+    """
+    if isinstance(exc, httpx.HTTPStatusError):
+        code = exc.response.status_code
+        phrase = exc.response.reason_phrase or ""
+        return f"Resy API error: {code} {phrase}".strip()
+    return "Resy API request failed"
+
+
 # ── Auth ──────────────────────────────────────────────
 
 
@@ -115,9 +129,10 @@ async def login(
     try:
         resy_jwt, resy_legacy, resy_refresh = await resy.authenticate(body.email, body.password)
     except Exception as exc:
+        logger.warning("Resy authentication failed for %s: %s", email, exc)
         raise HTTPException(
             status_code=401,
-            detail=f"Resy authentication failed: {exc}",
+            detail=_safe_resy_error(exc),
         ) from exc
 
     try:
@@ -197,7 +212,8 @@ async def search_venues(
     try:
         venues = await resy.search_venues(query, date, party_size)
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Resy search failed: {exc}") from exc
+        logger.warning("Resy search failed (query=%s, date=%s): %s", query, date, exc)
+        raise HTTPException(status_code=502, detail=_safe_resy_error(exc)) from exc
     await _log_activity(
         session,
         user.id,
@@ -219,7 +235,8 @@ async def get_slots(
     try:
         slots = await resy.find_slots(venue_id, date, party_size)
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Resy slot fetch failed: {exc}") from exc
+        logger.warning("Resy slot fetch failed (venue_id=%s, date=%s): %s", venue_id, date, exc)
+        raise HTTPException(status_code=502, detail=_safe_resy_error(exc)) from exc
     return slots
 
 
@@ -242,6 +259,7 @@ async def book_now(
         )
         confirmation = await resy.book_reservation(jwt_token, book_token, user.payment_method_id)
     except Exception as exc:
+        logger.warning("Resy booking failed (venue_id=%s): %s", body.venue_id, exc)
         await _log_activity(
             session,
             user.id,
@@ -250,7 +268,7 @@ async def book_now(
             ip=_client_ip(request),
         )
         await session.commit()
-        raise HTTPException(status_code=502, detail=f"Booking failed: {exc}") from exc
+        raise HTTPException(status_code=502, detail=_safe_resy_error(exc)) from exc
 
     await _log_activity(
         session,
