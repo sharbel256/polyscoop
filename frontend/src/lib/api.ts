@@ -684,8 +684,18 @@ export function getitCreateJob(
   });
 }
 
+export function getitStats(
+  token: string,
+): Promise<{ pending: number; active: number }> {
+  return authRequest("/getit/stats", token);
+}
+
 export function getitListJobs(token: string): Promise<GetitJob[]> {
   return authRequest<GetitJob[]>("/getit/jobs", token);
+}
+
+export function getitAdminListJobs(token: string): Promise<GetitJob[]> {
+  return authRequest<GetitJob[]>("/getit/admin/jobs", token);
 }
 
 export function getitGetJob(token: string, jobId: string): Promise<GetitJob> {

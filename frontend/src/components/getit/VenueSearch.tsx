@@ -51,7 +51,7 @@ export function VenueSearch({
     if (selected) return;
     clearTimeout(debounceRef.current);
     if (query.trim().length < 2) return;
-    debounceRef.current = setTimeout(() => search(query), 400);
+    debounceRef.current = setTimeout(() => search(query), 800);
     return () => clearTimeout(debounceRef.current);
   }, [query, search, selected]);
 
@@ -79,32 +79,34 @@ export function VenueSearch({
             </div>
           )}
         </div>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => onDateChange(e.target.value)}
-          className="input w-full sm:w-36"
-        />
-        <div className="flex items-center gap-0">
-          <button
-            type="button"
-            onClick={() => onPartySizeChange(Math.max(1, partySize - 1))}
-            disabled={partySize <= 1}
-            className="flex h-10 w-10 items-center justify-center rounded-l-lg border border-r-0 border-white/10 bg-surface-dark-2 text-body text-foreground transition-colors hover:bg-surface-hover/60 disabled:opacity-30"
-          >
-            -
-          </button>
-          <span className="flex h-10 w-10 items-center justify-center border border-white/10 bg-surface-dark-2 text-caption text-foreground">
-            {partySize}
-          </span>
-          <button
-            type="button"
-            onClick={() => onPartySizeChange(Math.min(6, partySize + 1))}
-            disabled={partySize >= 6}
-            className="flex h-10 w-10 items-center justify-center rounded-r-lg border border-l-0 border-white/10 bg-surface-dark-2 text-body text-foreground transition-colors hover:bg-surface-hover/60 disabled:opacity-30"
-          >
-            +
-          </button>
+        <div className="flex gap-3">
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => onDateChange(e.target.value)}
+            className="input min-w-0 flex-1 sm:w-36"
+          />
+          <div className="flex items-center gap-0">
+            <button
+              type="button"
+              onClick={() => onPartySizeChange(Math.max(1, partySize - 1))}
+              disabled={partySize <= 1}
+              className="flex h-10 w-10 items-center justify-center rounded-l-lg border border-r-0 border-white/10 bg-surface-dark-2 text-body text-foreground transition-colors hover:bg-surface-hover/60 disabled:opacity-30"
+            >
+              -
+            </button>
+            <span className="flex h-10 w-10 items-center justify-center border border-white/10 bg-surface-dark-2 text-caption text-foreground">
+              {partySize}
+            </span>
+            <button
+              type="button"
+              onClick={() => onPartySizeChange(Math.min(6, partySize + 1))}
+              disabled={partySize >= 6}
+              className="flex h-10 w-10 items-center justify-center rounded-r-lg border border-l-0 border-white/10 bg-surface-dark-2 text-body text-foreground transition-colors hover:bg-surface-hover/60 disabled:opacity-30"
+            >
+              +
+            </button>
+          </div>
         </div>
       </div>
 

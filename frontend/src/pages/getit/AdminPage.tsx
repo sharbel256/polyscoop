@@ -6,7 +6,7 @@ import {
   getitAdminUpdateUser,
   getitAdminWorkerStatus,
   getitAdminToggleWorker,
-  getitListJobs,
+  getitAdminListJobs,
   getitCancelJob,
   type GetitAdminUser,
   type GetitJob,
@@ -78,7 +78,7 @@ export function AdminPage() {
     setLoading(true);
     Promise.all([
       getitAdminListUsers(token),
-      getitListJobs(token),
+      getitAdminListJobs(token),
       getitAdminWorkerStatus(token),
     ])
       .then(([u, j, w]) => {
@@ -169,6 +169,7 @@ export function AdminPage() {
     "pending",
     "active",
     "success",
+    "exhausted",
     "failed",
     "cancelled",
   ];

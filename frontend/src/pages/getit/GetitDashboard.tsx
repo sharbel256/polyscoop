@@ -6,6 +6,7 @@ import { JobCard } from "@/components/getit/JobCard";
 import {
   getitListJobs,
   getitCreateJob,
+  getitStats,
   type GetitVenue,
   type GetitJob,
 } from "@/lib/api";
@@ -23,6 +24,12 @@ export function GetitDashboard() {
   const [selectedVenue, setSelectedVenue] = useState<GetitVenue | null>(null);
   const [booked, setBooked] = useState<number | null>(null);
 
+  // stats
+  const [stats, setStats] = useState<{
+    pending: number;
+    active: number;
+  } | null>(null);
+
   // jobs
   const [jobs, setJobs] = useState<GetitJob[]>([]);
 
@@ -30,6 +37,9 @@ export function GetitDashboard() {
     if (!token) return;
     getitListJobs(token)
       .then(setJobs)
+      .catch(() => {});
+    getitStats(token)
+      .then(setStats)
       .catch(() => {});
   }, [token]);
 
@@ -163,11 +173,18 @@ export function GetitDashboard() {
         </div>
       )}
 
-      {/* your job */}
+      {/* your jobs */}
       {jobs.length > 0 && (
         <div>
           <div className="mb-3 flex items-center gap-2">
-            <h2 className="text-h3 text-foreground">your job</h2>
+            <h2 className="text-h3 text-foreground">your jobs</h2>
+            {stats && (stats.pending > 0 || stats.active > 0) && (
+              <span className="text-micro text-foreground/30">
+                {stats.pending} pending · {stats.active} running across all
+                users
+              </span>
+            )}
+            <div className="flex-1" />
             <button
               onClick={loadJobs}
               className="inline-flex items-center justify-center rounded-lg p-1.5 text-foreground/40 transition-colors hover:bg-surface-hover/60 hover:text-foreground"

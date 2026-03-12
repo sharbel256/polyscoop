@@ -53,7 +53,7 @@ class Settings:
     # In dev use a stable secret so sessions survive restarts;
     # in production a random secret is generated each startup.
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY") or secrets.token_urlsafe(32)
-    RATE_LIMIT_PER_USER = int(os.getenv("RATE_LIMIT_PER_USER", "30"))
+    RATE_LIMIT_PER_USER = int(os.getenv("RATE_LIMIT_PER_USER", "60"))
     RATE_LIMIT_GLOBAL = int(os.getenv("RATE_LIMIT_GLOBAL", "200"))
 
 

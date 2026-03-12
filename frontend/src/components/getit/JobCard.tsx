@@ -7,6 +7,7 @@ const STATUS_COLORS: Record<string, string> = {
   active: "badge-blue",
   success: "badge-green",
   failed: "badge-red",
+  exhausted: "badge-gray",
   cancelled: "badge-gray",
 };
 
@@ -103,7 +104,13 @@ export function JobCard({ job, onUpdated }: JobCardProps) {
       )}
       {job.status === "failed" && (
         <div className="mt-2 rounded-lg bg-loss/10 px-3 py-2 text-caption text-loss">
-          failed after {job.attempts} attempts
+          failed —{" "}
+          {String(job.result?.error ?? `error after ${job.attempts} attempts`)}
+        </div>
+      )}
+      {job.status === "exhausted" && (
+        <div className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-caption text-foreground/50">
+          no slots found after {job.attempts} attempts
         </div>
       )}
 
