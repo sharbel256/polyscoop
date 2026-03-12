@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+
+function to12h(time: string): string {
+  const [h, m] = time.split(":");
+  const hour = parseInt(h, 10);
+  const suffix = hour >= 12 ? "pm" : "am";
+  return `${((hour + 11) % 12) + 1}:${m}${suffix}`;
+}
 import {
   getitFetchSlots,
   getitBook,
@@ -44,7 +51,9 @@ export function SlotPicker({
   const [mode, setMode] = useState<"snipe" | "poll">("snipe");
   const [snipeAt, setSnipeAt] = useState("");
   const [pollInterval, setPollInterval] = useState(60);
-  const [flexEnabled, setFlexEnabled] = useState(true);
+  const [pollDuration, setPollDuration] = useState(86400); // seconds (default 24h)
+  const [flexEnabled, setFlexEnabled] = useState(false);
+  const [flexMinutes, setFlexMinutes] = useState(60);
   const [scheduling, setScheduling] = useState(false);
 
   useEffect(() => {
@@ -84,8 +93,9 @@ export function SlotPicker({
       snipe_at:
         mode === "snipe" && snipeAt ? new Date(snipeAt).toISOString() : null,
       poll_interval_seconds: mode === "poll" ? pollInterval : null,
-      time_flex_minutes: flexEnabled ? 60 : 0,
-      max_attempts: mode === "snipe" ? 20 : 50,
+      time_flex_minutes: flexEnabled ? flexMinutes : 0,
+      max_attempts:
+        mode === "snipe" ? 20 : Math.ceil(pollDuration / pollInterval),
     });
     setScheduling(false);
   }
@@ -125,7 +135,7 @@ export function SlotPicker({
                 className="card flex flex-col items-center gap-2 p-3"
               >
                 <span className="text-body font-semibold text-foreground">
-                  {slot.time.slice(0, 5)}
+                  {to12h(slot.time.slice(0, 5))}
                 </span>
                 <span className="text-micro text-foreground/50">
                   {slot.type}
@@ -160,17 +170,36 @@ export function SlotPicker({
                 onChange={(e) => setDesiredTime(e.target.value)}
                 className="input w-full"
               />
-              <button
-                type="button"
-                onClick={() => setFlexEnabled((v) => !v)}
-                className={`mt-1.5 rounded-full px-2.5 py-0.5 text-micro transition-colors ${
-                  flexEnabled
-                    ? "bg-brand-500/20 text-brand-400"
-                    : "bg-white/5 text-foreground/40 hover:bg-white/10"
-                }`}
-              >
-                {flexEnabled ? "± 1 hour" : "exact time"}
-              </button>
+              <div className="mt-1.5 flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setFlexEnabled(false)}
+                  className={`rounded-full px-2.5 py-0.5 text-micro transition-colors ${
+                    !flexEnabled
+                      ? "bg-brand-500/20 text-brand-400"
+                      : "bg-white/5 text-foreground/40 hover:bg-white/10"
+                  }`}
+                >
+                  exact
+                </button>
+                {[15, 30, 60].map((mins) => (
+                  <button
+                    key={mins}
+                    type="button"
+                    onClick={() => {
+                      setFlexEnabled(true);
+                      setFlexMinutes(mins);
+                    }}
+                    className={`rounded-full px-2.5 py-0.5 text-micro transition-colors ${
+                      flexEnabled && flexMinutes === mins
+                        ? "bg-brand-500/20 text-brand-400"
+                        : "bg-white/5 text-foreground/40 hover:bg-white/10"
+                    }`}
+                  >
+                    ± {mins}m
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="flex-1">
               <label className="mb-1 block text-micro text-foreground/50">
@@ -217,24 +246,83 @@ export function SlotPicker({
             </div>
           )}
 
-          {mode === "poll" && (
-            <div>
-              <label className="mb-1 block text-micro text-foreground/50">
-                check every
-              </label>
-              <select
-                value={pollInterval}
-                onChange={(e) => setPollInterval(Number(e.target.value))}
-                className="input w-full"
-              >
-                <option value={30}>30 seconds</option>
-                <option value={60}>1 minute</option>
-                <option value={300}>5 minutes</option>
-                <option value={900}>15 minutes</option>
-                <option value={1800}>30 minutes</option>
-              </select>
-            </div>
-          )}
+          {mode === "poll" &&
+            (() => {
+              const MAX_ATTEMPTS = 300;
+              const intervals: [number, string][] = [
+                [60, "1 min"],
+                [300, "5 min"],
+              ];
+              const durations: [number, string][] = [
+                [3600, "1 hr"],
+                [10800, "3 hr"],
+                [18000, "5 hr"],
+                [43200, "12 hr"],
+                [86400, "24 hr"],
+              ];
+              const allowedDurations = durations.filter(
+                ([d]) => Math.ceil(d / pollInterval) <= MAX_ATTEMPTS,
+              );
+              const attempts = Math.ceil(pollDuration / pollInterval);
+              return (
+                <div className="space-y-3">
+                  <div>
+                    <label className="mb-1.5 block text-micro text-foreground/50">
+                      check every
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {intervals.map(([val, label]) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => {
+                            setPollInterval(val);
+                            const maxDur = MAX_ATTEMPTS * val;
+                            if (pollDuration > maxDur) {
+                              const nearest = durations
+                                .filter(([d]) => d <= maxDur)
+                                .pop();
+                              if (nearest) setPollDuration(nearest[0]);
+                            }
+                          }}
+                          className={`rounded-full px-3 py-1 text-caption transition-colors ${
+                            pollInterval === val
+                              ? "bg-brand-500/20 text-brand-400"
+                              : "bg-white/5 text-foreground/40 hover:bg-white/10"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-micro text-foreground/50">
+                      for
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {allowedDurations.map(([val, label]) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setPollDuration(val)}
+                          className={`rounded-full px-3 py-1 text-caption transition-colors ${
+                            pollDuration === val
+                              ? "bg-brand-500/20 text-brand-400"
+                              : "bg-white/5 text-foreground/40 hover:bg-white/10"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-micro text-foreground/30">
+                    {attempts} attempts
+                  </p>
+                </div>
+              );
+            })()}
 
           <button
             onClick={handleScheduleSubmit}

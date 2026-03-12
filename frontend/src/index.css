@@ -103,7 +103,7 @@
   }
 
   .input {
-    @apply w-full rounded-xl border border-white/[0.08] px-4 py-2.5 text-sm text-foreground placeholder-foreground-muted outline-none transition-all;
+    @apply w-full rounded-xl border border-white/[0.08] px-4 py-2.5 text-base text-foreground placeholder-foreground-muted outline-none transition-all sm:text-sm;
     background: rgb(var(--surface-elevated) / 0.4);
     &:focus {
       border-color: rgb(75 107 255 / 0.5);

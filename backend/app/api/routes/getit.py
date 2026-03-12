@@ -266,6 +266,22 @@ async def book_now(
     )
 
 
+# ── Stats ─────────────────────────────────────────────
+
+
+@router.get("/stats")
+async def job_stats(
+    _user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    result = await session.execute(select(ResyJob.status, func.count()).group_by(ResyJob.status))
+    counts: dict[str, int] = {row[0]: row[1] for row in result.all()}
+    return {
+        "pending": counts.get("pending", 0),
+        "active": counts.get("active", 0),
+    }
+
+
 # ── Jobs ──────────────────────────────────────────────
 
 
@@ -320,10 +336,8 @@ async def list_jobs(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    query = select(ResyJob)
-    if not user.is_admin:
-        query = query.where(ResyJob.user_id == user.id)
-    query = query.order_by(ResyJob.created_at.desc())
+    query = select(ResyJob).where(ResyJob.user_id == user.id)
+    query = query.order_by(ResyJob.created_at.desc()).limit(3)
     result = await session.execute(query)
     jobs = result.scalars().all()
     responses = []
@@ -415,6 +429,21 @@ async def admin_update_user(
     await session.commit()
     await session.refresh(target)
     return target
+
+
+@router.get("/admin/jobs", response_model=list[JobResponse])
+async def admin_list_jobs(
+    _admin: User = Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    query = select(ResyJob).order_by(ResyJob.created_at.desc())
+    result = await session.execute(query)
+    jobs = result.scalars().all()
+    responses = []
+    for j in jobs:
+        runs = await _fetch_runs(session, j.id)
+        responses.append(_job_response(j, runs))
+    return responses
 
 
 # ── Workers ───────────────────────────────────────────

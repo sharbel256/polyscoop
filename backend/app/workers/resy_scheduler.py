@@ -184,7 +184,7 @@ async def _process_job(job: ResyJob) -> None:
             "success",
             "cancelled",
         ):
-            job.status = "failed"
+            job.status = "exhausted"
             logger.info("job %s: max attempts reached", job.id)
 
         await session.merge(job)

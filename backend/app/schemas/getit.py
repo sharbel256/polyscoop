@@ -71,7 +71,7 @@ class JobCreate(BaseModel):
     snipe_at: datetime | None = None
     poll_interval_seconds: int | None = None
     time_flex_minutes: int = 0
-    max_attempts: int = 50
+    max_attempts: int = 300
 
 
 class JobRun(BaseModel):
