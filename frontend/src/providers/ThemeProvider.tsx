@@ -1,10 +1,6 @@
-import {
-  createContext,
-  useEffect,
-  useState,
-  useCallback,
-  type ReactNode,
-} from "react";
+import { useEffect, useState, useCallback, type ReactNode } from "react";
+
+import { ThemeContext } from "./ThemeContext";
 
 export type Theme = "light" | "dark" | "system";
 type ResolvedTheme = "light" | "dark";
@@ -16,8 +12,6 @@ export interface ThemeContextValue {
 }
 
 const STORAGE_KEY = "polyscoop-theme";
-
-export const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === "undefined") return "dark";

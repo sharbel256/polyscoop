@@ -79,14 +79,18 @@ async def _attempt_booking(job: ResyJob, user: User) -> dict | None:
     jwt_token = user.resy_jwt
 
     slots = await resy.find_slots(job.venue_id, job.date, job.party_size)
+    logger.info("job %s: found %d slots", job.id, len(slots))
     flex = job.time_flex_minutes or 0
     matched = _find_best_slot(slots, job.desired_time, flex)
     if matched is None:
+        logger.info("job %s: no slot within flex window", job.id)
         return None
 
+    logger.info("job %s: matched slot %s, getting book token", job.id, matched["time"])
     book_token = await resy.get_book_token(
         jwt_token, matched["config_token"], job.date, job.party_size
     )
+    logger.info("job %s: got book token, submitting /3/book", job.id)
     return await resy.book_reservation(
         jwt_token,
         book_token,
@@ -130,7 +134,7 @@ async def _process_job(job: ResyJob) -> None:
             if job.snipe_at and job.snipe_at > now:
                 return  # not time yet
             end = now.timestamp() + SNIPE_BURST_DURATION
-            while asyncio.get_event_loop().time() < end and job.attempts < job.max_attempts:
+            while asyncio.get_event_loop().time() < end:
                 job.attempts += 1
                 job.last_attempt_at = _utcnow()
                 try:
@@ -151,8 +155,8 @@ async def _process_job(job: ResyJob) -> None:
                         return
                 except Exception as exc:
                     job.result = {"error": _friendly_error(exc)}
-                    logger.debug(
-                        "job %s: attempt %d failed: %s",
+                    logger.warning(
+                        "job %s: snipe attempt %d failed: %s",
                         job.id,
                         job.attempts,
                         exc,
@@ -169,6 +173,10 @@ async def _process_job(job: ResyJob) -> None:
                 await session.commit()
                 delay = random.uniform(SNIPE_BURST_INTERVAL_MIN, SNIPE_BURST_INTERVAL_MAX)
                 await asyncio.sleep(delay)
+            # Burst finished without success — mark exhausted so it's not retried
+            if job.status not in ("success", "cancelled"):
+                job.status = "exhausted"
+                logger.info("job %s: snipe burst finished after %d attempts", job.id, job.attempts)
 
         elif job.mode == "poll":
             interval = job.poll_interval_seconds or 60
@@ -192,7 +200,7 @@ async def _process_job(job: ResyJob) -> None:
                     logger.info("job %s: booked successfully", job.id)
             except Exception as exc:
                 job.result = {"error": _friendly_error(exc)}
-                logger.debug(
+                logger.warning(
                     "job %s: poll attempt %d failed: %s",
                     job.id,
                     job.attempts,
@@ -207,10 +215,15 @@ async def _process_job(job: ResyJob) -> None:
                     )
                 )
 
-        # Check max attempts
-        if job.attempts >= job.max_attempts and job.status not in (
-            "success",
-            "cancelled",
+        # Check max attempts (poll mode only — snipe is governed by burst duration)
+        if (
+            job.mode == "poll"
+            and job.attempts >= job.max_attempts
+            and job.status
+            not in (
+                "success",
+                "cancelled",
+            )
         ):
             job.status = "exhausted"
             logger.info("job %s: max attempts reached", job.id)
