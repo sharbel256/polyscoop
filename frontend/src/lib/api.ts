@@ -704,6 +704,16 @@ export function getitAdminListJobs(token: string): Promise<GetitJob[]> {
   return authRequest<GetitJob[]>("/getit/admin/jobs", token);
 }
 
+export function getitAdminDebugFind(
+  token: string,
+  jobId: string,
+): Promise<{ status_code: number; body: string }> {
+  return authRequest<{ status_code: number; body: string }>(
+    `/getit/admin/jobs/${jobId}/find`,
+    token,
+  );
+}
+
 export function getitGetJob(token: string, jobId: string): Promise<GetitJob> {
   return authRequest<GetitJob>(`/getit/jobs/${jobId}`, token);
 }

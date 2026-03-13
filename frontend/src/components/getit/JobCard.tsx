@@ -102,6 +102,21 @@ export function JobCard({ job, onUpdated }: JobCardProps) {
           reservation confirmed (#{String(job.result.reservation_id)})
         </div>
       )}
+
+      {/* active with error + backoff */}
+      {job.status === "active" && !!job.result?.error && (
+        <div className="mt-2 rounded-lg bg-foreground/5 px-3 py-2 text-caption text-foreground/60">
+          {String(job.result.error)}
+          {job.result.next_attempt_in != null && (
+            <span className="ml-1 text-foreground/40">
+              · retrying in{" "}
+              {Number(job.result.next_attempt_in) >= 60
+                ? `${Math.round(Number(job.result.next_attempt_in) / 60)}min`
+                : `${Number(job.result.next_attempt_in)}s`}
+            </span>
+          )}
+        </div>
+      )}
       {job.status === "failed" && (
         <div className="mt-2 rounded-lg bg-loss/10 px-3 py-2 text-caption text-loss">
           failed —{" "}
