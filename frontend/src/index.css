@@ -118,6 +118,10 @@
     max-width: 100%;
     min-width: 0;
     box-sizing: border-box;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    -webkit-appearance: none;
+    appearance: none;
   }
 
   /* Dark date/time picker popups */

@@ -164,8 +164,8 @@ export function SlotPicker({
         <h3 className="mb-3 text-body font-medium text-foreground">
           schedule a snipe
         </h3>
-        <div className="space-y-3">
-          <div className="flex flex-col gap-3 overflow-hidden sm:flex-row">
+        <div className="min-w-0 space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <div className="min-w-0 flex-1">
               <label className="mb-1 block text-micro text-foreground/50">
                 desired time
@@ -239,7 +239,7 @@ export function SlotPicker({
           </div>
 
           {mode === "snipe" && (
-            <div className="w-full min-w-0 overflow-hidden">
+            <div className="min-w-0">
               <label className="mb-1 block text-micro text-foreground/50">
                 snipe at (when reservations open)
               </label>
@@ -247,7 +247,7 @@ export function SlotPicker({
                 type="datetime-local"
                 value={snipeAt}
                 onChange={(e) => setSnipeAt(e.target.value)}
-                className="input min-w-0"
+                className="input min-h-[2.75rem] min-w-0"
               />
             </div>
           )}
@@ -332,7 +332,12 @@ export function SlotPicker({
 
           <button
             onClick={handleScheduleSubmit}
-            disabled={scheduling || !desiredTime || disabled}
+            disabled={
+              scheduling ||
+              !desiredTime ||
+              (mode === "snipe" && !snipeAt) ||
+              disabled
+            }
             className="btn-primary w-full"
           >
             {disabled

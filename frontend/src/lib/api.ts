@@ -13,8 +13,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`API ${res.status}: ${body}`);
+    let message = `request failed (${res.status})`;
+    try {
+      const body = await res.json();
+      if (body.detail) message = body.detail;
+    } catch {
+      // non-JSON response, keep generic message
+    }
+    throw new Error(message);
   }
 
   return res.json();
@@ -686,7 +692,7 @@ export function getitCreateJob(
 
 export function getitStats(
   token: string,
-): Promise<{ pending: number; active: number }> {
+): Promise<{ pending: number; active: number; scheduler_active: boolean }> {
   return authRequest("/getit/stats", token);
 }
 

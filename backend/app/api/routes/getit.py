@@ -79,16 +79,21 @@ def _create_access_token(user: User) -> str:
 
 
 def _safe_resy_error(exc: Exception) -> str:
-    """Return a user-safe error message from a Resy exception.
-
-    For HTTP errors, only the status code and reason phrase are exposed.
-    Internal response bodies and stack details are never returned to callers.
-    """
+    """Return a user-friendly error message from a Resy exception."""
     if isinstance(exc, httpx.HTTPStatusError):
         code = exc.response.status_code
-        phrase = exc.response.reason_phrase or ""
-        return f"Resy API error: {code} {phrase}".strip()
-    return "Resy API request failed"
+        if code == 404:
+            return "restaurant not found on resy"
+        if code == 401 or code == 403:
+            return "resy session expired — please re-login"
+        if code >= 500:
+            return "resy is temporarily unavailable"
+        return "something went wrong with resy"
+    if isinstance(exc, httpx.TimeoutException):
+        return "resy took too long to respond"
+    if isinstance(exc, ValueError):
+        return str(exc)
+    return "something went wrong with resy"
 
 
 # ── Auth ──────────────────────────────────────────────
@@ -289,14 +294,17 @@ async def book_now(
 
 @router.get("/stats")
 async def job_stats(
+    request: Request,
     _user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     result = await session.execute(select(ResyJob.status, func.count()).group_by(ResyJob.status))
     counts: dict[str, int] = {row[0]: row[1] for row in result.all()}
+    task = request.app.state.resy_scheduler
     return {
         "pending": counts.get("pending", 0),
         "active": counts.get("active", 0),
+        "scheduler_active": task is not None and not task.done(),
     }
 
 
@@ -323,6 +331,8 @@ async def create_job(
             detail="You already have an active job. Cancel it first.",
         )
 
+    from app.core.logging import correlation_id_ctx
+
     job = ResyJob(
         user_id=user.id,
         venue_name=body.venue_name,
@@ -335,6 +345,7 @@ async def create_job(
         poll_interval_seconds=body.poll_interval_seconds,
         time_flex_minutes=body.time_flex_minutes,
         max_attempts=body.max_attempts,
+        trace_id=correlation_id_ctx.get("-"),
     )
     session.add(job)
     await _log_activity(

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { getitSearchVenues, type GetitVenue } from "@/lib/api";
 
@@ -22,7 +22,6 @@ export function VenueSearch({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const search = useCallback(
     async (q: string) => {
@@ -47,18 +46,10 @@ export function VenueSearch({
     [token, date, partySize, onSelectVenue],
   );
 
-  useEffect(() => {
-    if (selected) return;
-    clearTimeout(debounceRef.current);
-    if (query.trim().length < 2) return;
-    debounceRef.current = setTimeout(() => search(query), 800);
-    return () => clearTimeout(debounceRef.current);
-  }, [query, search, selected]);
-
-  function handleChange(value: string) {
-    setQuery(value);
+  function handleClear() {
+    setQuery("");
     setError("");
-    if (selected) setSelected(false);
+    setSelected(false);
   }
 
   return (
@@ -69,15 +60,62 @@ export function VenueSearch({
             type="text"
             placeholder="restaurant name..."
             value={query}
-            onChange={(e) => handleChange(e.target.value)}
-            className="input w-full"
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setError("");
+              if (selected) setSelected(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                search(query);
+              }
+            }}
+            className="input w-full pr-10"
             autoComplete="off"
+            spellCheck={false}
+            autoCorrect="off"
           />
-          {loading && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+          <button
+            type="button"
+            onClick={() => (selected ? handleClear() : search(query))}
+            disabled={loading || (!selected && query.trim().length < 2)}
+            className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-foreground/40 transition-colors hover:text-foreground disabled:opacity-30"
+          >
+            {loading ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
-            </div>
-          )}
+            ) : selected ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            )}
+          </button>
         </div>
         <div className="flex gap-3">
           <input
