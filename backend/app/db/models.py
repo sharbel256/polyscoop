@@ -238,6 +238,7 @@ class ResyJob(Base):
     max_attempts: Mapped[int] = mapped_column(Integer, default=300)
     last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     result: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    trace_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()

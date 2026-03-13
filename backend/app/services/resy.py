@@ -187,7 +187,7 @@ async def find_slots(venue_id: int, date: str, party_size: int) -> list[dict]:
     if resp.status_code >= 500:
         body = resp.text
         logger.warning("Resy /4/find returned %s: %s", resp.status_code, body[:500])
-        raise ValueError(f"Resy returned {resp.status_code}")
+        raise ValueError("resy is temporarily unavailable")
     resp.raise_for_status()
 
     data = resp.json()

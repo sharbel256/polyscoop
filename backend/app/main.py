@@ -81,8 +81,13 @@ async def lifespan(app: FastAPI):
     # from app.workers.manager import start_workers, stop_workers
     # await start_workers()
 
-    # Resy scheduler managed at runtime via admin API
-    app.state.resy_scheduler = None
+    # Auto-start resy scheduler (can still be toggled via admin API)
+    import asyncio
+
+    from app.workers.resy_scheduler import run_forever
+
+    app.state.resy_scheduler = asyncio.create_task(run_forever())
+    logger.info("resy scheduler started")
 
     # Initialize shared httpx client
     from app.services.polymarket import get_client
@@ -100,6 +105,8 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("polyscoop shutting down")
+    if app.state.resy_scheduler and not app.state.resy_scheduler.done():
+        app.state.resy_scheduler.cancel()
     if otel_shutdown:
         otel_shutdown()
     # await stop_workers()

@@ -33,6 +33,26 @@ def _success_details(job_id, confirmation):
     }
 
 
+def _friendly_error(exc: Exception) -> str:
+    """Convert an exception into a user-friendly message for job results."""
+    import httpx
+
+    if isinstance(exc, httpx.HTTPStatusError):
+        code = exc.response.status_code
+        if code == 404:
+            return "restaurant not found on resy"
+        if code in (401, 403):
+            return "resy session expired"
+        if code >= 500:
+            return "resy is temporarily unavailable"
+        return "something went wrong with resy"
+    if isinstance(exc, httpx.TimeoutException):
+        return "resy took too long to respond"
+    if isinstance(exc, ValueError):
+        return str(exc)
+    return "unexpected error"
+
+
 def _time_to_minutes(t: str) -> int:
     """Convert HH:MM or HH:MM:SS to minutes since midnight."""
     parts = t.split(":")
@@ -76,6 +96,10 @@ async def _attempt_booking(job: ResyJob, user: User) -> dict | None:
 
 async def _process_job(job: ResyJob) -> None:
     """Process a single job: snipe or poll mode."""
+    from app.core.logging import correlation_id_ctx
+
+    correlation_id_ctx.set(job.trace_id or f"job-{job.id}")
+
     async with async_session() as session:
         result = await session.execute(select(User).where(User.id == job.user_id))
         user = result.scalar_one_or_none()
@@ -88,7 +112,7 @@ async def _process_job(job: ResyJob) -> None:
         except ResyTokenExpired:
             logger.warning("job %s: resy token expired, marking failed", job.id)
             job.status = "failed"
-            job.result = {"error": "resy_token_expired"}
+            job.result = {"error": "resy session expired — please re-login"}
             session.add(
                 ActivityLog(
                     user_id=user.id,
@@ -125,11 +149,13 @@ async def _process_job(job: ResyJob) -> None:
                         await session.commit()
                         logger.info("job %s: booked successfully", job.id)
                         return
-                except Exception:
+                except Exception as exc:
+                    job.result = {"error": _friendly_error(exc)}
                     logger.debug(
-                        "job %s: attempt %d failed",
+                        "job %s: attempt %d failed: %s",
                         job.id,
                         job.attempts,
+                        exc,
                         exc_info=True,
                     )
                 session.add(
@@ -164,11 +190,13 @@ async def _process_job(job: ResyJob) -> None:
                         )
                     )
                     logger.info("job %s: booked successfully", job.id)
-            except Exception:
+            except Exception as exc:
+                job.result = {"error": _friendly_error(exc)}
                 logger.debug(
-                    "job %s: poll attempt %d failed",
+                    "job %s: poll attempt %d failed: %s",
                     job.id,
                     job.attempts,
+                    exc,
                     exc_info=True,
                 )
                 session.add(
@@ -205,8 +233,16 @@ async def run_forever() -> None:
             for job in jobs:
                 try:
                     await _process_job(job)
-                except Exception:
+                except Exception as exc:
                     logger.exception("error processing job %s", job.id)
+                    try:
+                        async with async_session() as err_session:
+                            job.status = "failed"
+                            job.result = {"error": _friendly_error(exc)}
+                            await err_session.merge(job)
+                            await err_session.commit()
+                    except Exception:
+                        logger.exception("failed to mark job %s as failed", job.id)
 
         except Exception:
             logger.exception("resy scheduler tick failed")
