@@ -247,13 +247,24 @@ async def book_reservation(jwt_token: str, book_token: str, payment_method_id: i
             "venue_marketing_opt_in=0",
         ]
     )
-    resp = await client.post(
-        "/3/book",
-        content=body,
-        headers={**_auth_headers(jwt_token), "content-type": "application/x-www-form-urlencoded"},
-    )
+    try:
+        resp = await client.post(
+            "/3/book",
+            content=body,
+            headers={
+                **_auth_headers(jwt_token),
+                "content-type": "application/x-www-form-urlencoded",
+            },
+        )
+    except Exception:
+        logger.error(
+            "/3/book request failed (timeout or network error)"
+            " — booking may have succeeded on Resy side"
+        )
+        raise
+    logger.info("/3/book response: status=%s body=%s", resp.status_code, resp.text[:1000])
     resp.raise_for_status()
     data = resp.json()
     if not data.get("reservation_id"):
-        raise ValueError("Booking returned no reservation_id")
+        logger.warning("/3/book returned 200 but no reservation_id: %s", resp.text[:1000])
     return data

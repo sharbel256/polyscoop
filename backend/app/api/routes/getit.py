@@ -191,12 +191,7 @@ async def logout(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    """Clear stored Resy tokens."""
-    user.resy_jwt = None
-    user.resy_legacy_token = None
-    user.resy_refresh_token = None
-    user.payment_method_id = None
-    user.resy_token_updated_at = None
+    """Log the user out (Resy tokens are preserved for other sessions/scheduler)."""
     await _log_activity(session, user.id, "logout", ip=_client_ip(request))
     await session.commit()
     return {"ok": True}

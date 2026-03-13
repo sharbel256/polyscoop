@@ -3,13 +3,14 @@
  */
 
 import {
-  createContext,
   useCallback,
   useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
+
+import { AuthContext } from "./AuthContext";
 
 const TOKEN_KEY = "getit_token";
 
@@ -40,8 +41,6 @@ export interface AuthContextValue {
   /** Returns headers with Authorization bearer token attached. */
   authHeaders: () => Record<string, string>;
 }
-
-export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() =>
