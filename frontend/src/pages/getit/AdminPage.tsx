@@ -7,6 +7,7 @@ import {
   getitAdminWorkerStatus,
   getitAdminToggleWorker,
   getitAdminListJobs,
+  getitAdminDebugFind,
   getitCancelJob,
   type GetitAdminUser,
   type GetitJob,
@@ -72,6 +73,12 @@ export function AdminPage() {
   const [userPage, setUserPage] = useState(1);
   const [jobPage, setJobPage] = useState(1);
   const [jobFilter, setJobFilter] = useState("all");
+  const [findResult, setFindResult] = useState<{
+    jobId: string;
+    status_code: number;
+    body: string;
+  } | null>(null);
+  const [findLoading, setFindLoading] = useState<string | null>(null);
 
   const loadAll = useCallback(() => {
     if (!token || !isAdmin) return;
@@ -132,6 +139,19 @@ export function AdminPage() {
       loadAll();
     } catch {
       // ignore
+    }
+  }
+
+  async function handleDebugFind(jobId: string) {
+    if (!token) return;
+    setFindLoading(jobId);
+    try {
+      const res = await getitAdminDebugFind(token, jobId);
+      setFindResult({ jobId, ...res });
+    } catch {
+      setFindResult({ jobId, status_code: 0, body: "request failed" });
+    } finally {
+      setFindLoading(null);
     }
   }
 
@@ -335,19 +355,28 @@ export function AdminPage() {
                         {new Date(job.created_at).toLocaleString()}
                       </td>
                       <td className="px-3 py-2">
-                        {canCancel && (
+                        <div className="flex items-center gap-1">
                           <button
-                            onClick={() => handleCancelJob(job.id)}
-                            className="rounded px-2 py-0.5 text-micro text-loss transition-colors hover:bg-loss/10"
+                            onClick={() => handleDebugFind(job.id)}
+                            disabled={findLoading === job.id}
+                            className="rounded px-2 py-0.5 text-micro text-brand-400 transition-colors hover:bg-brand-500/10"
                           >
-                            cancel
+                            {findLoading === job.id ? "..." : "find"}
                           </button>
-                        )}
-                        {job.status === "success" && job.result && (
-                          <span className="text-micro text-gain">
-                            #{String(job.result.reservation_id)}
-                          </span>
-                        )}
+                          {canCancel && (
+                            <button
+                              onClick={() => handleCancelJob(job.id)}
+                              className="rounded px-2 py-0.5 text-micro text-loss transition-colors hover:bg-loss/10"
+                            >
+                              cancel
+                            </button>
+                          )}
+                          {job.status === "success" && job.result && (
+                            <span className="text-micro text-gain">
+                              #{String(job.result.reservation_id)}
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -361,6 +390,25 @@ export function AdminPage() {
           total={filteredJobs.length}
           onPage={setJobPage}
         />
+
+        {findResult && (
+          <div className="mt-4 rounded-lg border border-white/10 bg-surface-dark-2 p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-caption text-foreground/60">
+                /4/find — HTTP {findResult.status_code}
+              </span>
+              <button
+                onClick={() => setFindResult(null)}
+                className="text-micro text-foreground/40 hover:text-foreground"
+              >
+                close
+              </button>
+            </div>
+            <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all text-micro text-foreground/80">
+              {findResult.body}
+            </pre>
+          </div>
+        )}
       </section>
 
       {/* activity */}

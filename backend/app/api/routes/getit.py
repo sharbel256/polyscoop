@@ -470,6 +470,34 @@ async def admin_list_jobs(
     return responses
 
 
+@router.get("/admin/jobs/{job_id}/find")
+async def admin_debug_find(
+    job_id: str,
+    _admin: User = Depends(require_admin),
+    session: AsyncSession = Depends(get_session),
+):
+    """Run a raw /4/find for a job's venue/date/party_size and return the response."""
+    result = await session.execute(select(ResyJob).where(ResyJob.id == job_id))
+    job = result.scalar_one_or_none()
+    if job is None:
+        raise HTTPException(status_code=404, detail="job not found")
+    client = resy.get_client()
+    resp = await client.post(
+        "/4/find",
+        json={
+            "lat": 0,
+            "long": 0,
+            "day": job.date,
+            "party_size": job.party_size,
+            "venue_id": job.venue_id,
+        },
+    )
+    return {
+        "status_code": resp.status_code,
+        "body": resp.text,
+    }
+
+
 # ── Workers ───────────────────────────────────────────
 
 

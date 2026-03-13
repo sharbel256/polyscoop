@@ -24,6 +24,10 @@ LOOP_INTERVAL = 5  # seconds between scheduler ticks
 SNIPE_BURST_INTERVAL_MIN = 0.8  # min seconds between snipe attempts
 SNIPE_BURST_INTERVAL_MAX = 2.5  # max seconds between snipe attempts
 SNIPE_BURST_DURATION = 30  # seconds to keep sniping
+POLL_BACKOFF_MAX = 600  # max backoff cap for poll failures (10 min)
+
+# Track consecutive poll failures per job for exponential backoff
+_poll_failures: dict[str, int] = {}
 
 
 def _success_details(job_id, confirmation):
@@ -166,7 +170,11 @@ async def _process_job(job: ResyJob) -> None:
                     ActivityLog(
                         user_id=user.id,
                         action="book_attempt",
-                        details={"job_id": str(job.id), "attempt": job.attempts},
+                        details={
+                            "job_id": str(job.id),
+                            "attempt": job.attempts,
+                            "result": job.result,
+                        },
                     )
                 )
                 await session.merge(job)
@@ -179,7 +187,10 @@ async def _process_job(job: ResyJob) -> None:
                 logger.info("job %s: snipe burst finished after %d attempts", job.id, job.attempts)
 
         elif job.mode == "poll":
-            interval = job.poll_interval_seconds or 60
+            base_interval = job.poll_interval_seconds or 60
+            jid = str(job.id)
+            failures = _poll_failures.get(jid, 0)
+            interval = min(base_interval * (2**failures), POLL_BACKOFF_MAX)
             if job.last_attempt_at and (now - job.last_attempt_at).total_seconds() < interval:
                 return  # too soon
             job.attempts += 1
@@ -190,6 +201,7 @@ async def _process_job(job: ResyJob) -> None:
                 if confirmation:
                     job.status = "success"
                     job.result = confirmation
+                    _poll_failures.pop(jid, None)
                     session.add(
                         ActivityLog(
                             user_id=user.id,
@@ -198,12 +210,23 @@ async def _process_job(job: ResyJob) -> None:
                         )
                     )
                     logger.info("job %s: booked successfully", job.id)
+                else:
+                    # No error, just no matching slot — reset backoff
+                    _poll_failures.pop(jid, None)
             except Exception as exc:
-                job.result = {"error": _friendly_error(exc)}
+                _poll_failures[jid] = failures + 1
+                next_interval = min(base_interval * (2 ** (failures + 1)), POLL_BACKOFF_MAX)
+                next_attempt_at = _utcnow().timestamp() + next_interval
+                job.result = {
+                    "error": _friendly_error(exc),
+                    "next_attempt_in": next_interval,
+                    "next_attempt_at": datetime.fromtimestamp(next_attempt_at).isoformat(),
+                }
                 logger.warning(
-                    "job %s: poll attempt %d failed: %s",
+                    "job %s: poll attempt %d failed (next in %ds): %s",
                     job.id,
                     job.attempts,
+                    next_interval,
                     exc,
                     exc_info=True,
                 )
@@ -211,7 +234,11 @@ async def _process_job(job: ResyJob) -> None:
                     ActivityLog(
                         user_id=user.id,
                         action="book_attempt",
-                        details={"job_id": str(job.id), "attempt": job.attempts},
+                        details={
+                            "job_id": str(job.id),
+                            "attempt": job.attempts,
+                            "result": job.result,
+                        },
                     )
                 )
 
@@ -226,6 +253,7 @@ async def _process_job(job: ResyJob) -> None:
             )
         ):
             job.status = "exhausted"
+            _poll_failures.pop(str(job.id), None)
             logger.info("job %s: max attempts reached", job.id)
 
         await session.merge(job)
