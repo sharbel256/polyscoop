@@ -2,10 +2,13 @@
 
 import asyncio
 import base64
+import http.client
 import json
 import logging
+import ssl
 import time
 import urllib.parse
+from datetime import UTC, datetime
 from typing import Literal
 
 from curl_cffi.requests import Session
@@ -105,6 +108,62 @@ def _check_status(resp, allowed: tuple[int, ...] = (200,)) -> None:
     """Raise ResyHTTPError if status code is not in allowed set."""
     if resp.status_code not in allowed:
         raise ResyHTTPError(resp.status_code, resp.text[:1000])
+
+
+# ── Stdlib HTTP client (avoids Imperva detection) ───
+
+
+_SSL_CTX = ssl.create_default_context()
+
+# Track last /4/find request result for health monitoring
+last_resy_check: dict[str, str | int | None] | None = None
+
+
+class _StdlibResponse:
+    """Minimal response wrapper to match curl_cffi interface."""
+
+    def __init__(self, status_code: int, body: str):
+        self.status_code = status_code
+        self.text = body
+
+    def json(self):
+        return json.loads(self.text)
+
+
+def _stdlib_request(
+    method: str,
+    path: str,
+    headers: dict | None = None,
+    data: str | None = None,
+    timeout: int = 30,
+) -> _StdlibResponse:
+    """Make a Resy API request using Python's built-in http.client.
+
+    Uses standard TLS (like Node's https module) which avoids
+    Imperva bot detection that triggers on curl_cffi fingerprints.
+    """
+    merged = {**BASE_HEADERS, **(headers or {})}
+    body_bytes = data.encode() if data else None
+    if body_bytes:
+        merged["content-length"] = str(len(body_bytes))
+
+    global last_resy_check
+    conn = http.client.HTTPSConnection("api.resy.com", timeout=timeout, context=_SSL_CTX)
+    try:
+        conn.request(method, path, body=body_bytes, headers=merged)
+        resp = conn.getresponse()
+        result = _StdlibResponse(resp.status, resp.read().decode())
+        now = datetime.now(UTC).isoformat()
+        last_resy_check = {"status_code": result.status_code, "at": now}
+        return result
+    except Exception as exc:
+        now = datetime.now(UTC).isoformat()
+        last_resy_check = {"status_code": None, "error": str(exc), "at": now}
+        if "timeout" in str(exc).lower() or "timed out" in str(exc).lower():
+            raise ResyTimeoutError(str(exc)) from exc
+        raise
+    finally:
+        conn.close()
 
 
 # ── Auth helpers ─────────────────────────────────────
@@ -247,7 +306,11 @@ async def search_venues(query: str, date: str, party_size: int) -> list[dict]:
 async def find_slots(
     venue_id: int, date: str, party_size: int, session: Session | None = None
 ) -> list[dict]:
-    """Get available slots for a venue. No auth required — uses API key only."""
+    """Get available slots for a venue. No auth required — uses API key only.
+
+    Uses stdlib http.client to avoid Imperva bot detection on repeated polls.
+    The ``session`` parameter is accepted for backwards compat but ignored.
+    """
 
     def _call():
         payload = json.dumps(
@@ -259,12 +322,11 @@ async def find_slots(
                 "venue_id": venue_id,
             }
         )
-        resp = _resy_request(
+        resp = _stdlib_request(
             "POST",
             "/4/find",
             headers={"content-type": "application/json"},
             data=payload,
-            session=session,
         )
         _check_status(resp)
 
@@ -308,7 +370,7 @@ async def find_slots_raw(venue_id: int, date: str, party_size: int) -> dict:
                 "venue_id": venue_id,
             }
         )
-        resp = _resy_request(
+        resp = _stdlib_request(
             "POST",
             "/4/find",
             headers={"content-type": "application/json"},

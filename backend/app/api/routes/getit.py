@@ -297,10 +297,19 @@ async def job_stats(
     result = await session.execute(select(ResyJob.status, func.count()).group_by(ResyJob.status))
     counts: dict[str, int] = {row[0]: row[1] for row in result.all()}
     task = request.app.state.resy_scheduler
+    last_check = None
+    if resy.last_resy_check:
+        lc = resy.last_resy_check
+        last_check = {
+            "status_code": lc.get("status_code"),
+            "at": lc.get("at"),
+            "ok": lc.get("status_code") == 200,
+        }
     return {
         "pending": counts.get("pending", 0),
         "active": counts.get("active", 0),
         "scheduler_active": task is not None and not task.done(),
+        "last_resy_check": last_check,
     }
 
 

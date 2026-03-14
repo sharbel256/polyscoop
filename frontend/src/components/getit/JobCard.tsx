@@ -69,7 +69,7 @@ export function JobCard({ job, onUpdated }: JobCardProps) {
           {/* snipe/poll details */}
           {job.mode === "snipe" && job.snipe_at && (
             <div className="text-micro text-foreground/40">
-              snipe at {chiDateTime(job.snipe_at)} CT
+              snipe at {chiDateTime(job.snipe_at)} CT · 45s burst
             </div>
           )}
           {job.mode === "poll" && job.poll_interval_seconds && (
@@ -87,9 +87,19 @@ export function JobCard({ job, onUpdated }: JobCardProps) {
             </div>
           )}
         </div>
-        <span className={STATUS_COLORS[job.status] || "badge"}>
-          {job.status}
-        </span>
+        {canCancel ? (
+          <button
+            onClick={handleCancel}
+            disabled={cancelling}
+            className="badge-red cursor-pointer"
+          >
+            {cancelling ? "cancelling..." : "cancel"}
+          </button>
+        ) : (
+          <span className={STATUS_COLORS[job.status] || "badge"}>
+            {job.status}
+          </span>
+        )}
       </div>
 
       {/* result */}
@@ -99,45 +109,45 @@ export function JobCard({ job, onUpdated }: JobCardProps) {
         </div>
       )}
 
-      {/* attempt result for non-success terminal & active states */}
-      {job.status !== "success" &&
-        job.status !== "cancelled" &&
-        job.attempts > 0 && (
-          <div className="mt-2 rounded-lg bg-foreground/5 px-3 py-2 text-caption text-foreground/60">
-            <span>attempt #{job.attempts}</span>
-            {!!job.result?.error && <span> — {String(job.result.error)}</span>}
-            {!job.result?.error && (
-              <span>
-                {" — "}
-                {Array.isArray(job.result?.available_slots) &&
-                job.result.available_slots.length > 0
-                  ? `no match (available: ${(job.result.available_slots as string[]).map((t) => formatTime12h(t)).join(", ")})`
-                  : "no slots available"}
-              </span>
-            )}
-            {job.result?.next_attempt_in != null && (
-              <span className="ml-1 text-foreground/40">
-                · retrying in{" "}
-                {Number(job.result.next_attempt_in) >= 60
-                  ? `${Math.round(Number(job.result.next_attempt_in) / 60)}min`
-                  : `${Number(job.result.next_attempt_in)}s`}
-              </span>
-            )}
-          </div>
-        )}
-
-      {/* footer */}
-      <div className="mt-2 flex items-center justify-between text-micro text-foreground/50">
-        {canCancel && (
-          <button
-            onClick={handleCancel}
-            disabled={cancelling}
-            className="btn-ghost text-loss"
-          >
-            {cancelling ? "cancelling..." : "cancel job"}
-          </button>
-        )}
-      </div>
+      {/* recent attempts */}
+      {job.runs.length > 0 && (
+        <div className="mt-2 space-y-1">
+          {job.runs.map((run) => {
+            const d = run.details as Record<string, unknown> | null;
+            const result = d?.result as Record<string, unknown> | undefined;
+            const error = result?.error as string | undefined;
+            const slots = result?.available_slots as string[] | undefined;
+            return (
+              <div
+                key={`${run.attempt}-${run.timestamp}`}
+                className="rounded-lg bg-foreground/5 px-3 py-1.5 text-micro text-foreground/50"
+              >
+                <span>#{run.attempt}</span>
+                {run.action === "book_success" ? (
+                  <span className="text-gain"> — booked</span>
+                ) : error ? (
+                  <span> — {error}</span>
+                ) : slots && slots.length > 0 ? (
+                  <span>
+                    {" — no match (available: "}
+                    {slots.map((t) => formatTime12h(t)).join(", ")})
+                  </span>
+                ) : (
+                  <span> — no slots available</span>
+                )}
+                <span className="ml-1 text-foreground/30">
+                  {new Date(run.timestamp).toLocaleString("en-US", {
+                    timeZone: "America/Chicago",
+                    hour: "numeric",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  })}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
