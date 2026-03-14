@@ -30,6 +30,11 @@ export function GetitDashboard() {
     pending: number;
     active: number;
     scheduler_active: boolean;
+    last_resy_check: {
+      status_code: number | null;
+      at: string | null;
+      ok: boolean;
+    } | null;
   } | null>(null);
 
   // jobs
@@ -120,19 +125,52 @@ export function GetitDashboard() {
               )}
             </div>
             {stats && (
-              <div className="flex items-center gap-2">
-                <div
-                  className={`h-2 w-2 rounded-full ${stats.scheduler_active ? "bg-gain" : "bg-loss"}`}
-                />
-                <span className="text-caption text-foreground/60">
-                  scheduler {stats.scheduler_active ? "active" : "inactive"}
-                </span>
-                {(stats.pending > 0 || stats.active > 0) && (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`h-2 w-2 rounded-full ${
+                      stats.last_resy_check == null
+                        ? "bg-foreground/20"
+                        : stats.last_resy_check.ok
+                          ? "bg-gain"
+                          : "bg-loss"
+                    }`}
+                  />
+                  <span className="text-caption text-foreground/60">
+                    {stats.last_resy_check == null
+                      ? "no resy requests yet"
+                      : stats.last_resy_check.ok
+                        ? "resy reachable"
+                        : `resy returned ${stats.last_resy_check.status_code ?? "error"}`}
+                  </span>
+                  {stats.last_resy_check?.at && (
+                    <span className="text-micro text-foreground/40">
+                      last check{" "}
+                      {new Date(stats.last_resy_check.at).toLocaleString(
+                        "en-US",
+                        {
+                          timeZone: "America/Chicago",
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        },
+                      )}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`h-2 w-2 rounded-full ${stats.scheduler_active ? "bg-gain" : "bg-loss"}`}
+                  />
+                  <span className="text-caption text-foreground/60">
+                    scheduler {stats.scheduler_active ? "active" : "inactive"}
+                  </span>
                   <span className="text-micro text-foreground/40">
-                    {stats.pending} pending {stats.active} running - across all
+                    {stats.pending} pending {stats.active} running — across all
                     users
                   </span>
-                )}
+                </div>
               </div>
             )}
           </div>

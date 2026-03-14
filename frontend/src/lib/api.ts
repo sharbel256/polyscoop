@@ -690,9 +690,16 @@ export function getitCreateJob(
   });
 }
 
-export function getitStats(
-  token: string,
-): Promise<{ pending: number; active: number; scheduler_active: boolean }> {
+export function getitStats(token: string): Promise<{
+  pending: number;
+  active: number;
+  scheduler_active: boolean;
+  last_resy_check: {
+    status_code: number | null;
+    at: string | null;
+    ok: boolean;
+  } | null;
+}> {
   return authRequest("/getit/stats", token);
 }
 
