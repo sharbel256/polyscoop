@@ -5,7 +5,6 @@ import logging
 import uuid
 from datetime import UTC, datetime
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -80,16 +79,16 @@ def _create_access_token(user: User) -> str:
 
 def _safe_resy_error(exc: Exception) -> str:
     """Return a user-friendly error message from a Resy exception."""
-    if isinstance(exc, httpx.HTTPStatusError):
-        code = exc.response.status_code
+    if isinstance(exc, resy.ResyHTTPError):
+        code = exc.status_code
         if code == 404:
             return "restaurant not found on resy"
-        if code == 401 or code == 403:
+        if code in (401, 403):
             return "resy session expired — please re-login"
         if code >= 500:
             return "resy is temporarily unavailable"
         return "something went wrong with resy"
-    if isinstance(exc, httpx.TimeoutException):
+    if isinstance(exc, resy.ResyTimeoutError):
         return "resy took too long to respond"
     if isinstance(exc, ValueError):
         return str(exc)
@@ -252,7 +251,9 @@ async def book_now(
     try:
         jwt_token = await ensure_fresh_resy_token(user, session)
     except ResyTokenExpired:
-        raise HTTPException(status_code=401, detail="Resy session expired — please re-login")
+        raise HTTPException(
+            status_code=401, detail="Resy session expired — please re-login"
+        ) from None
     try:
         book_token = await resy.get_book_token(
             jwt_token, body.config_token, body.date, body.party_size
@@ -313,18 +314,19 @@ async def create_job(
     user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
-    # Enforce 1 active job per user
-    existing = await session.execute(
-        select(ResyJob).where(
-            ResyJob.user_id == user.id,
-            ResyJob.status.in_(["pending", "active"]),
+    # Enforce 1 active job per non-admin user
+    if not user.is_admin:
+        existing = await session.execute(
+            select(ResyJob).where(
+                ResyJob.user_id == user.id,
+                ResyJob.status.in_(["pending", "active"]),
+            )
         )
-    )
-    if existing.scalar_one_or_none() is not None:
-        raise HTTPException(
-            status_code=409,
-            detail="You already have an active job. Cancel it first.",
-        )
+        if existing.scalar_one_or_none() is not None:
+            raise HTTPException(
+                status_code=409,
+                detail="You already have an active job. Cancel it first.",
+            )
 
     from app.core.logging import correlation_id_ctx
 
@@ -481,21 +483,7 @@ async def admin_debug_find(
     job = result.scalar_one_or_none()
     if job is None:
         raise HTTPException(status_code=404, detail="job not found")
-    client = resy.get_client()
-    resp = await client.post(
-        "/4/find",
-        json={
-            "lat": 0,
-            "long": 0,
-            "day": job.date,
-            "party_size": job.party_size,
-            "venue_id": job.venue_id,
-        },
-    )
-    return {
-        "status_code": resp.status_code,
-        "body": resp.text,
-    }
+    return await resy.find_slots_raw(job.venue_id, job.date, job.party_size)
 
 
 # ── Workers ───────────────────────────────────────────

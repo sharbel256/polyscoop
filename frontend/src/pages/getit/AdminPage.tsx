@@ -262,7 +262,12 @@ export function AdminPage() {
                     </button>
                   </td>
                   <td className="px-3 py-2 text-foreground/50">
-                    {new Date(u.created_at).toLocaleDateString()}
+                    {new Date(u.created_at).toLocaleDateString("en-US", {
+                      timeZone: "America/Chicago",
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
                   </td>
                 </tr>
               ))}
@@ -352,7 +357,13 @@ export function AdminPage() {
                         {job.attempts}/{job.max_attempts}
                       </td>
                       <td className="whitespace-nowrap px-3 py-2 text-foreground/50">
-                        {new Date(job.created_at).toLocaleString()}
+                        {new Date(job.created_at).toLocaleString("en-US", {
+                          timeZone: "America/Chicago",
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
                       </td>
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-1">

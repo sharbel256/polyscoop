@@ -12,7 +12,7 @@ import {
 } from "@/lib/api";
 
 export function GetitDashboard() {
-  const { token, user } = useAuth();
+  const { token, user, isAdmin } = useAuth();
 
   // search state
   const [date, setDate] = useState(() => {
@@ -63,10 +63,10 @@ export function GetitDashboard() {
     return () => clearInterval(id);
   }, [hasActiveJob, loadJobs]);
 
-  // auto-collapse slots when a job starts, expand when it clears
+  // auto-collapse slots when a job starts, expand when it clears (admins stay expanded)
   useEffect(() => {
-    setSlotsExpanded(!hasActiveJob);
-  }, [hasActiveJob]);
+    setSlotsExpanded(isAdmin || !hasActiveJob);
+  }, [hasActiveJob, isAdmin]);
 
   // schedule job from slot picker
   async function handleSchedule(req: SnipeRequest) {
@@ -205,7 +205,7 @@ export function GetitDashboard() {
                   loadJobs();
                 }}
                 onSchedule={handleSchedule}
-                disabled={hasActiveJob}
+                disabled={hasActiveJob && !isAdmin}
               />
             </div>
           )}

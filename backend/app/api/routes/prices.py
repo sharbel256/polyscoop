@@ -36,17 +36,17 @@ async def get_price_history(
             data = resp.json()
     except httpx.TimeoutException:
         logger.error("clob_timeout GET /prices-history market=%s", market)
-        raise HTTPException(status_code=504, detail="Upstream service timed out")
+        raise HTTPException(status_code=504, detail="Upstream service timed out") from None
     except httpx.HTTPStatusError as exc:
         logger.error(
             "clob_http_error GET /prices-history market=%s status=%d",
             market,
             exc.response.status_code,
         )
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise HTTPException(status_code=502, detail="Upstream service error") from None
     except httpx.HTTPError as exc:
         logger.error("clob_connection_error GET /prices-history error=%s", exc)
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise HTTPException(status_code=502, detail="Upstream service error") from None
 
     raw_history = data if isinstance(data, list) else data.get("history", [])
 

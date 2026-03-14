@@ -38,17 +38,17 @@ async def list_positions(
             data = resp.json()
     except httpx.TimeoutException:
         logger.error("data_api_timeout GET /positions user=%s", user)
-        raise HTTPException(status_code=504, detail="Upstream service timed out")
+        raise HTTPException(status_code=504, detail="Upstream service timed out") from None
     except httpx.HTTPStatusError as exc:
         logger.error(
             "data_api_http_error GET /positions status=%d body=%s",
             exc.response.status_code,
             exc.response.text[:500],
         )
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise HTTPException(status_code=502, detail="Upstream service error") from None
     except httpx.HTTPError as exc:
         logger.error("data_api_connection_error GET /positions error=%s", exc)
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise HTTPException(status_code=502, detail="Upstream service error") from None
 
     positions_raw = data if isinstance(data, list) else []
     positions = [PositionSummary(**p) for p in positions_raw]
