@@ -5,6 +5,7 @@ Otherwise, fetches top active events by volume.
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 
@@ -73,10 +74,8 @@ async def discover_markets() -> int:
                     if isinstance(t, dict) and t.get("token_id"):
                         token_ids.append(t["token_id"])
             if not token_ids:
-                try:
+                with contextlib.suppress(json.JSONDecodeError, TypeError):
                     token_ids = json.loads(m.get("clobTokenIds", "[]"))
-                except (json.JSONDecodeError, TypeError):
-                    pass
 
             if not token_ids:
                 continue

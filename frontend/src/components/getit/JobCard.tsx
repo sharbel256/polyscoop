@@ -19,16 +19,6 @@ const CHI_FMT: Intl.DateTimeFormatOptions = {
   minute: "2-digit",
 };
 
-const CHI_TIME: Intl.DateTimeFormatOptions = {
-  timeZone: "America/Chicago",
-  hour: "numeric",
-  minute: "2-digit",
-};
-
-function chiTime(iso: string) {
-  return new Date(iso).toLocaleString("en-US", CHI_TIME);
-}
-
 function chiDateTime(iso: string) {
   return new Date(iso).toLocaleString("en-US", CHI_FMT);
 }
@@ -88,6 +78,12 @@ export function JobCard({ job, onUpdated }: JobCardProps) {
               {job.poll_interval_seconds >= 60
                 ? `${job.poll_interval_seconds / 60}min`
                 : `${job.poll_interval_seconds}s`}
+              {" · up to "}
+              {(() => {
+                const total = job.poll_interval_seconds * job.max_attempts;
+                if (total >= 3600) return `${Math.round(total / 3600)}hr`;
+                return `${Math.round(total / 60)}min`;
+              })()}
             </div>
           )}
         </div>
@@ -103,69 +99,35 @@ export function JobCard({ job, onUpdated }: JobCardProps) {
         </div>
       )}
 
-      {/* active with error + backoff */}
-      {job.status === "active" && !!job.result?.error && (
-        <div className="mt-2 rounded-lg bg-foreground/5 px-3 py-2 text-caption text-foreground/60">
-          {String(job.result.error)}
-          {job.result.next_attempt_in != null && (
-            <span className="ml-1 text-foreground/40">
-              · retrying in{" "}
-              {Number(job.result.next_attempt_in) >= 60
-                ? `${Math.round(Number(job.result.next_attempt_in) / 60)}min`
-                : `${Number(job.result.next_attempt_in)}s`}
-            </span>
-          )}
-        </div>
-      )}
-      {job.status === "failed" && (
-        <div className="mt-2 rounded-lg bg-loss/10 px-3 py-2 text-caption text-loss">
-          failed —{" "}
-          {String(job.result?.error ?? `error after ${job.attempts} attempts`)}
-        </div>
-      )}
-      {job.status === "exhausted" && (
-        <div className="mt-2 rounded-lg bg-white/5 px-3 py-2 text-caption text-foreground/50">
-          no slots found after {job.attempts} attempts
-        </div>
-      )}
-
-      {/* last 5 runs */}
-      {job.runs && job.runs.length > 0 && (
-        <div className="mt-3 space-y-1">
-          <div className="text-micro font-medium text-foreground/50">
-            recent runs
-          </div>
-          {job.runs.map((run, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between text-micro text-foreground/40"
-            >
-              <span
-                className={
-                  run.action === "book_success"
-                    ? "text-gain"
-                    : run.action === "book_failed"
-                      ? "text-loss"
-                      : ""
-                }
-              >
-                {run.action === "book_success"
-                  ? "success"
-                  : run.action === "book_failed"
-                    ? "failed"
-                    : `attempt #${run.attempt}`}
+      {/* attempt result for non-success terminal & active states */}
+      {job.status !== "success" &&
+        job.status !== "cancelled" &&
+        job.attempts > 0 && (
+          <div className="mt-2 rounded-lg bg-foreground/5 px-3 py-2 text-caption text-foreground/60">
+            <span>attempt #{job.attempts}</span>
+            {!!job.result?.error && <span> — {String(job.result.error)}</span>}
+            {!job.result?.error && (
+              <span>
+                {" — "}
+                {Array.isArray(job.result?.available_slots) &&
+                job.result.available_slots.length > 0
+                  ? `no match (available: ${(job.result.available_slots as string[]).map((t) => formatTime12h(t)).join(", ")})`
+                  : "no slots available"}
               </span>
-              <span>{chiTime(run.timestamp)}</span>
-            </div>
-          ))}
-        </div>
-      )}
+            )}
+            {job.result?.next_attempt_in != null && (
+              <span className="ml-1 text-foreground/40">
+                · retrying in{" "}
+                {Number(job.result.next_attempt_in) >= 60
+                  ? `${Math.round(Number(job.result.next_attempt_in) / 60)}min`
+                  : `${Number(job.result.next_attempt_in)}s`}
+              </span>
+            )}
+          </div>
+        )}
 
       {/* footer */}
       <div className="mt-2 flex items-center justify-between text-micro text-foreground/50">
-        <span>
-          {job.attempts}/{job.max_attempts} attempts
-        </span>
         {canCancel && (
           <button
             onClick={handleCancel}

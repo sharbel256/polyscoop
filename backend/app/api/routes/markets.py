@@ -139,13 +139,13 @@ async def list_tags():
             data = resp.json()
     except httpx.TimeoutException:
         logger.error("gamma_timeout GET /tags")
-        raise HTTPException(status_code=504, detail="Upstream service timed out")
+        raise HTTPException(status_code=504, detail="Upstream service timed out") from None
     except httpx.HTTPStatusError as exc:
         logger.error("gamma_http_error GET /tags status=%d", exc.response.status_code)
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise HTTPException(status_code=502, detail="Upstream service error") from None
     except httpx.HTTPError as exc:
         logger.error("gamma_connection_error GET /tags error=%s", exc)
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise HTTPException(status_code=502, detail="Upstream service error") from None
 
     raw_tags = data if isinstance(data, list) else data.get("data", [])
     return [
@@ -193,17 +193,17 @@ async def list_events(
             data = resp.json()
     except httpx.TimeoutException:
         logger.error("gamma_timeout GET /events params=%s", params)
-        raise HTTPException(status_code=504, detail="Upstream service timed out")
+        raise HTTPException(status_code=504, detail="Upstream service timed out") from None
     except httpx.HTTPStatusError as exc:
         logger.error(
             "gamma_http_error GET /events status=%d body=%s",
             exc.response.status_code,
             exc.response.text[:500],
         )
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise HTTPException(status_code=502, detail="Upstream service error") from None
     except httpx.HTTPError as exc:
         logger.error("gamma_connection_error GET /events error=%s", exc)
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise HTTPException(status_code=502, detail="Upstream service error") from None
 
     events_raw = data if isinstance(data, list) else data.get("data", data.get("events", []))
     events = [_parse_gamma_event(e) for e in events_raw]
@@ -252,17 +252,17 @@ async def list_markets(
             data = resp.json()
     except httpx.TimeoutException:
         logger.error("gamma_timeout GET /markets params=%s", params)
-        raise HTTPException(status_code=504, detail="Upstream service timed out")
+        raise HTTPException(status_code=504, detail="Upstream service timed out") from None
     except httpx.HTTPStatusError as exc:
         logger.error(
             "gamma_http_error GET /markets status=%d body=%s",
             exc.response.status_code,
             exc.response.text[:500],
         )
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise HTTPException(status_code=502, detail="Upstream service error") from None
     except httpx.HTTPError as exc:
         logger.error("gamma_connection_error GET /markets error=%s", exc)
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise HTTPException(status_code=502, detail="Upstream service error") from None
 
     markets_raw = data if isinstance(data, list) else data.get("data", data.get("markets", []))
     markets = [_parse_gamma_market(m) for m in markets_raw]
@@ -297,21 +297,21 @@ async def get_market(
             data = resp.json()
     except httpx.TimeoutException:
         logger.error("gamma_timeout GET /markets?condition_ids=%s", condition_id)
-        raise HTTPException(status_code=504, detail="Upstream service timed out")
+        raise HTTPException(status_code=504, detail="Upstream service timed out") from None
     except httpx.HTTPStatusError as exc:
         logger.error(
             "gamma_http_error GET /markets?condition_ids=%s status=%d",
             condition_id,
             exc.response.status_code,
         )
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise HTTPException(status_code=502, detail="Upstream service error") from None
     except httpx.HTTPError as exc:
         logger.error(
             "gamma_connection_error GET /markets?condition_ids=%s error=%s",
             condition_id,
             exc,
         )
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise HTTPException(status_code=502, detail="Upstream service error") from None
 
     results = data if isinstance(data, list) else data.get("data", [])
     if not results:
@@ -330,7 +330,7 @@ def _detect_walls(levels: list[dict], threshold_multiplier: float = 2.0) -> list
         return []
     return [
         {"price": lv["price"], "size": lv["size"]}
-        for lv, sz in zip(levels, sizes)
+        for lv, sz in zip(levels, sizes, strict=False)
         if sz > avg * threshold_multiplier
     ]
 
@@ -349,7 +349,7 @@ async def get_orderbook(
             data = resp.json()
     except httpx.TimeoutException:
         logger.error("clob_timeout GET /book token_id=%s", token_id)
-        raise HTTPException(status_code=504, detail="Upstream service timed out")
+        raise HTTPException(status_code=504, detail="Upstream service timed out") from None
     except httpx.HTTPStatusError as exc:
         if exc.response.status_code == 404:
             # Return empty orderbook for markets with no active book
@@ -373,10 +373,10 @@ async def get_orderbook(
         raise HTTPException(
             status_code=502,
             detail="Upstream service error",
-        )
+        ) from None
     except httpx.HTTPError as exc:
         logger.error("clob_connection_error GET /book token_id=%s error=%s", token_id, exc)
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise HTTPException(status_code=502, detail="Upstream service error") from None
 
     bids = data.get("bids", [])
     asks = data.get("asks", [])

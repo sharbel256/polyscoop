@@ -44,7 +44,7 @@ async def get_builder_trades(
         )
     except Exception:
         logger.exception("builder_trades hmac computation error")
-        raise HTTPException(status_code=500, detail="Signing computation failed")
+        raise HTTPException(status_code=500, detail="Signing computation failed") from None
 
     headers = {
         "POLY_BUILDER_SIGNATURE": signature,

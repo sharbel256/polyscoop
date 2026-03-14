@@ -55,7 +55,7 @@ async def sign_builder_request(payload: SignRequest):
         )
     except Exception:
         logger.exception("sign_request_failed hmac computation error")
-        raise HTTPException(status_code=500, detail="Signing computation failed")
+        raise HTTPException(status_code=500, detail="Signing computation failed") from None
 
     logger.debug("sign_request method=%s path=%s", payload.method, payload.path)
 

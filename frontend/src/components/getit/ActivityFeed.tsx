@@ -51,7 +51,13 @@ export function ActivityFeed({ limit = 50 }: { limit?: number }) {
             )}
           </div>
           <span className="text-micro text-foreground/40">
-            {new Date(entry.created_at).toLocaleString()}
+            {new Date(entry.created_at).toLocaleString("en-US", {
+              timeZone: "America/Chicago",
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            })}
           </span>
         </div>
       ))}

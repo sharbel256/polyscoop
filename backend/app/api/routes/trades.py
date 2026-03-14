@@ -29,17 +29,17 @@ async def list_trades(
             data = resp.json()
     except httpx.TimeoutException:
         logger.error("data_api_timeout GET /trades market=%s", market)
-        raise HTTPException(status_code=504, detail="Upstream service timed out")
+        raise HTTPException(status_code=504, detail="Upstream service timed out") from None
     except httpx.HTTPStatusError as exc:
         logger.error(
             "data_api_http_error GET /trades market=%s status=%d",
             market,
             exc.response.status_code,
         )
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise HTTPException(status_code=502, detail="Upstream service error") from None
     except httpx.HTTPError as exc:
         logger.error("data_api_connection_error GET /trades error=%s", exc)
-        raise HTTPException(status_code=502, detail="Upstream service error")
+        raise HTTPException(status_code=502, detail="Upstream service error") from None
 
     raw_trades = data if isinstance(data, list) else []
 
