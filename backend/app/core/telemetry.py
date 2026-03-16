@@ -38,6 +38,7 @@ def setup_telemetry(app) -> Callable[[], None] | None:  # noqa: ANN001
     resource = Resource.create(
         {
             "service.name": settings.OTEL_SERVICE_NAME,
+            "service.namespace": os.getenv("OTEL_SERVICE_NAMESPACE", "polyscoop"),
             "deployment.environment": os.getenv("ENVIRONMENT", "development"),
         }
     )

@@ -81,14 +81,6 @@ async def lifespan(app: FastAPI):
     # from app.workers.manager import start_workers, stop_workers
     # await start_workers()
 
-    # Auto-start resy scheduler (can still be toggled via admin API)
-    import asyncio
-
-    from app.workers.resy_scheduler import run_forever
-
-    app.state.resy_scheduler = asyncio.create_task(run_forever())
-    logger.info("resy scheduler started")
-
     # Initialize shared httpx client
     from app.services.polymarket import get_client
 
@@ -105,8 +97,6 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("polyscoop shutting down")
-    if app.state.resy_scheduler and not app.state.resy_scheduler.done():
-        app.state.resy_scheduler.cancel()
     if otel_shutdown:
         otel_shutdown()
     # await stop_workers()
@@ -144,6 +134,19 @@ app.add_middleware(CorrelationIdMiddleware)
 
 # API routes
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+
+# Redirect /getit to standalone app
+from fastapi.responses import RedirectResponse
+
+
+@app.get("/getit")
+@app.get("/getit/{rest:path}")
+async def redirect_getit(rest: str = ""):
+    target = "https://getit.sharbel.cc"
+    if rest:
+        target += f"/{rest}"
+    return RedirectResponse(url=target, status_code=301)
+
 
 # Serve frontend static build if present
 if FRONTEND_DIST.exists():

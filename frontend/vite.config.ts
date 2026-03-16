@@ -10,6 +10,7 @@ export default defineConfig({
     },
   },
   server: {
+    allowedHosts: ["sharbel.cc"],
     port: 5173,
     proxy: {
       "/api": {

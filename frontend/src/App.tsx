@@ -12,10 +12,6 @@ import { LeaderboardPage } from "@/pages/LeaderboardPage";
 import { CopyTradePage } from "@/pages/CopyTradePage";
 import { ComingSoonPage } from "@/pages/ComingSoonPage";
 import { TransparencyPage } from "@/pages/TransparencyPage";
-import { GetitLayout } from "@/pages/getit/GetitLayout";
-import { GetitDashboard } from "@/pages/getit/GetitDashboard";
-import { JobsPage } from "@/pages/getit/JobsPage";
-import { AdminPage } from "@/pages/getit/AdminPage";
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -100,11 +96,6 @@ export default function App() {
     <Providers>
       <BrowserRouter>
         <Routes>
-          <Route path="/getit" element={<GetitLayout />}>
-            <Route index element={<GetitDashboard />} />
-            <Route path="jobs" element={<JobsPage />} />
-            <Route path="admin" element={<AdminPage />} />
-          </Route>
           <Route
             path="*"
             element={!import.meta.env.DEV ? <ComingSoonPage /> : <AppLayout />}
