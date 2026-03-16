@@ -8,7 +8,6 @@
  */
 
 import { type ReactNode } from "react";
-import { AuthProvider } from "./AuthProvider";
 import { ThemeProvider } from "./ThemeProvider";
 import { Web3Provider } from "./Web3Provider";
 import { WalletProvider } from "./WalletContext";
@@ -16,11 +15,9 @@ import { WalletProvider } from "./WalletContext";
 export default function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <Web3Provider>
-          <WalletProvider>{children}</WalletProvider>
-        </Web3Provider>
-      </AuthProvider>
+      <Web3Provider>
+        <WalletProvider>{children}</WalletProvider>
+      </Web3Provider>
     </ThemeProvider>
   );
 }
