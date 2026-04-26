@@ -1,0 +1,16 @@
+# Production — use with: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:4232:5432"
+
+  redis:
+    ports:
+      - "127.0.0.1:4279:6379"
+
+  app:
+    ports:
+      - "127.0.0.1:4200:8000"
+    restart: unless-stopped
+    environment:
+      PYTHONOPTIMIZE: "2"

@@ -29,7 +29,7 @@ setup-frontend:
 
 # Start Postgres + Redis for local development
 infra:
-    docker compose up -d
+    docker compose up -d postgres redis
     @echo "✅ Postgres (5432) + Redis (6379) running"
 
 # Stop local infrastructure
@@ -126,18 +126,34 @@ test-frontend:
 
 test: test-backend test-frontend
 
-# ── Docker ───────────────────────────────────────────────
+# ── Deploy ─────────────────────────────────────────────────
 
-# Build Docker image locally
-docker-build:
-    docker build \
-        --build-arg VITE_WALLETCONNECT_PROJECT_ID="${VITE_WALLETCONNECT_PROJECT_ID:-}" \
-        --build-arg VITE_POLYGON_RPC_URL="${VITE_POLYGON_RPC_URL:-https://polygon-rpc.com}" \
-        -t polyscoop:local .
+# Deploy locally (default: docker compose with auto-loaded override)
+deploy-local:
+    docker compose up --build -d
+    @echo "local deploy running on http://localhost:8000"
 
-# Run Docker image locally
-docker-run:
-    docker run --rm -p 8000:8000 --env-file .env polyscoop:local
+# Deploy production
+deploy-prod:
+    docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+    @echo "production deploy running on http://127.0.0.1:4200"
+
+# Stop local deployment
+deploy-local-down:
+    docker compose down
+
+# Stop production deployment
+deploy-prod-down:
+    docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+
+# View logs for a deployment (usage: just logs or just logs prod)
+logs target="local":
+    #!/usr/bin/env bash
+    if [ "{{ target }}" = "prod" ]; then
+        docker compose -f docker-compose.yml -f docker-compose.prod.yml logs -f
+    else
+        docker compose logs -f
+    fi
 
 # ── Utilities ────────────────────────────────────────────
 
