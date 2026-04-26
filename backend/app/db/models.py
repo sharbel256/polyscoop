@@ -7,7 +7,6 @@ from sqlalchemy import (
     Boolean,
     DateTime,
     Float,
-    ForeignKey,
     Index,
     Integer,
     String,
@@ -190,5 +189,3 @@ class CopytradeExecution(Base):
     reason: Mapped[str] = mapped_column(Text, default="")
     pnl: Mapped[float] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-
-
