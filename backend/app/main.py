@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.api.router import api_router
@@ -135,10 +135,8 @@ app.add_middleware(CorrelationIdMiddleware)
 # API routes
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
+
 # Redirect /getit to standalone app
-from fastapi.responses import RedirectResponse
-
-
 @app.get("/getit")
 @app.get("/getit/{rest:path}")
 async def redirect_getit(rest: str = ""):

@@ -529,4 +529,3 @@ export function fetchCopytradeHistory(
     `/copytrade/history?${qs}`,
   );
 }
-
